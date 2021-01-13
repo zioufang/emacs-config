@@ -53,17 +53,23 @@
 ;; Custom Keybindings
 (use-package general
   :config
+  (general-create-definer leader
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :non-normal-prefix "M-SPC"
+  )
+  ;; evil mapping
   (general-evil-setup)
   (general-nmap
     "C-k" 'evil-window-up
     "C-j" 'evil-window-down
     "C-h" 'evil-window-left
     "C-l" 'evil-window-right)
-  (general-create-definer leader
-    :keymaps '(normal insert visual emacs)
-    :prefix "SPC"
-    :non-normal-prefix "M-SPC"
-   )
+  ;; global mapping
+  (general-define-key
+    "C-M-b" 'ivy-switch-buffer
+    "C-M-f" 'counsel-find-file
+  )
   (leader
     "h" '(:ignore h :which-key "hydra actions"))
 )
