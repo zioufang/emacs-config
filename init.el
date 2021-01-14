@@ -1,5 +1,5 @@
-(defvar runemacs/default-font-size 150)
-(set-face-attribute 'default nil :font "JetBrains Mono" :height runemacs/default-font-size)
+(defvar default-font-size 150)
+(set-face-attribute 'default nil :font "JetBrains Mono" :height default-font-size)
 
 (setq inhibit-startup-message t)
 
@@ -50,10 +50,15 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
+(defun find-org ()
+    "Open where I often go."
+    (interactive)
+    (counsel-find-file "~/projects/org"))
+
 ;; Custom Keybindings
 (use-package general
   :config
-  (general-create-definer leader
+  (general-create-definer leaderkey
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
     :non-normal-prefix "M-SPC"
@@ -68,11 +73,16 @@
   ;; global mapping
   (general-define-key
     "C-M-b" 'ivy-switch-buffer
-    "C-M-f" 'counsel-find-file
+    "C-M-o" 'find-org
   )
-  (leader
-    "h" '(:ignore h :which-key "hydra actions"))
-)
+  (leaderkey
+    "h" '(:ignore h :which-key "hydra commands")
+    "p" '(projectile-command-map :which-key "projectile commands")
+    )
+  )
+
+;; Org
+(use-package org)
 
 ;; Hydra
 (use-package hydra)
@@ -83,7 +93,7 @@
   ("j" text-scale-decrease "decrease")
   ("q" nil "quit" :exit t))
 
-(leader
+(leaderkey
   "hf" '(hydra-text-scale/body :which-key "scale font size"))
 
 ;; Evil
@@ -117,7 +127,6 @@
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
-;;
 ;; Ivy
 (use-package ivy
   :diminish
@@ -135,6 +144,7 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (setq ivy-initial-inputs-alist nil)    ;; remove ^
+  (setq ivy-extra-directories nil) ;; remove ./.. from dir
   (ivy-mode 1))
 
 (use-package counsel
@@ -157,8 +167,28 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+;; Projectile
+;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  (when (file-directory-p "~/projects")
+    (setq projectile-project-search-path '("~/projects")))
+  (setq projectile-switch-project-action #'projectile-dired))
+  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
+
+;; better ivy/counsel integration with M-o
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 (use-package vterm)
+
+;; Magit
+(use-package magit)
+(use-package forge)
 
 ;; Which Key
 (use-package which-key
@@ -187,7 +217,7 @@
  '(custom-safe-themes
    '("d6603a129c32b716b3d3541fc0b6bfe83d0e07f1954ee64517aa62c9405a3441" "bf387180109d222aee6bb089db48ed38403a1e330c9ec69fe1f52460a8936b66" "e6ff132edb1bfa0645e2ba032c44ce94a3bd3c15e3929cdf6c049802cf059a2a" "77113617a0642d74767295c4408e17da3bfd9aa80aaa2b4eeb34680f6172d71a" "76bfa9318742342233d8b0b42e824130b3a50dcc732866ff8e47366aed69de11" "be9645aaa8c11f76a10bcf36aaf83f54f4587ced1b9b679b55639c87404e2499" "711efe8b1233f2cf52f338fd7f15ce11c836d0b6240a18fffffc2cbd5bfe61b0" default))
  '(package-selected-packages
-   '(evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
+   '(forge evil-magit magit projectile evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
  '(which-key-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
