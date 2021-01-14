@@ -1,10 +1,24 @@
-(defvar default-font-size 150)
-(set-face-attribute 'default nil :font "JetBrains Mono" :height default-font-size)
+;; startup tricks from doom emacs
+(setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+      gc-cons-percentage 0.6)
+(add-hook 'emacs-startup-hook
+  (lambda ()
+    (setq gc-cons-threshold 16777216 ; 16mb
+          gc-cons-percentage 0.1)))
 
+;; Fonts
+(defvar dot-font-size 150)
+(defvar dot-mono-font"JetBrains Mono")
+(defvar dot-variable-font "Cantarell")
+(set-face-attribute 'default nil :font dot-mono-font :height dot-font-size)
+;; Set the fixed pitch face
+(set-face-attribute 'fixed-pitch nil :font dot-mono-font :height dot-font-size)
+;; Set the variable pitch face
+(set-face-attribute 'variable-pitch nil :font dot-variable-font :height (+ dot-font-size 30) :weight 'regular)
+
+;; UI
 (setq inhibit-startup-message t)
-
 (scroll-bar-mode -1)        ; Disable visible scrollbar
-
 (tool-bar-mode -1)          ; Disable the toolbar
 (tooltip-mode -1)           ; Disable tooltips
 (menu-bar-mode -1)            ; Disable the menu bar
@@ -50,7 +64,7 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
-(defun find-org ()
+(defun dot-find-org ()
     "Open Org Dir"
     (interactive)
     (counsel-find-file "~/projects/org"))
@@ -72,8 +86,9 @@
     "C-l" 'evil-window-right)
   ;; global mapping
   (general-define-key
+    "C-s"   'swiper
     "C-M-b" 'ivy-switch-buffer
-    "C-M-o" 'find-org
+    "C-M-o" 'dot-find-org
   )
   (leaderkey
     "h" '(:ignore h :which-key "hydra commands")
@@ -82,7 +97,56 @@
   )
 
 ;; Org
-(use-package org)
+(defun dot-org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+(defun dot-org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+ ;; Set faces for heading levels
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+
+(use-package org
+  :hook (org-mode . dot-org-mode-setup)
+  :config
+  (setq org-ellipsis " ▾")
+  (dot-org-font-setup)
+  )
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(defun dot-org-mode-visual-fill ()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(use-package visual-fill-column
+  :hook (org-mode . dot-org-mode-visual-fill))
 
 ;; Hydra
 (use-package hydra)
