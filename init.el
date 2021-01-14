@@ -51,7 +51,7 @@
 (global-hl-line-mode t)
 
 (defun find-org ()
-    "Open where I often go."
+    "Open Org Dir"
     (interactive)
     (counsel-find-file "~/projects/org"))
 
@@ -117,6 +117,20 @@
   :after evil
   :config
   (evil-commentary-mode))
+
+(use-package evil-snipe
+  :after evil
+  :init
+  (setq evil-snipe-scope 'visible)
+  (setq evil-snipe-repeat-scope 'whole-visible)
+  :config
+  (evil-snipe-mode)
+  (evil-snipe-override-mode)
+  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+
+(use-package evil-surround
+  :config
+  (global-evil-surround-mode))
 
 (use-package undo-fu
   :after evil
@@ -217,7 +231,7 @@
  '(custom-safe-themes
    '("d6603a129c32b716b3d3541fc0b6bfe83d0e07f1954ee64517aa62c9405a3441" "bf387180109d222aee6bb089db48ed38403a1e330c9ec69fe1f52460a8936b66" "e6ff132edb1bfa0645e2ba032c44ce94a3bd3c15e3929cdf6c049802cf059a2a" "77113617a0642d74767295c4408e17da3bfd9aa80aaa2b4eeb34680f6172d71a" "76bfa9318742342233d8b0b42e824130b3a50dcc732866ff8e47366aed69de11" "be9645aaa8c11f76a10bcf36aaf83f54f4587ced1b9b679b55639c87404e2499" "711efe8b1233f2cf52f338fd7f15ce11c836d0b6240a18fffffc2cbd5bfe61b0" default))
  '(package-selected-packages
-   '(forge evil-magit magit projectile evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
+   '(evil-surround forge evil-magit magit projectile evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
  '(which-key-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
