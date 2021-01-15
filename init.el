@@ -127,12 +127,31 @@
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
+(setq org-todo-keywords
+  '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
+
 (use-package org
   :hook (org-mode . dot-org-mode-setup)
   :config
   (setq org-ellipsis " ▾")
   (dot-org-font-setup)
   )
+
+;; babel
+(require 'ob-go)
+(org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (python . t)
+    (go . t)
+    ))
+(setq org-confirm-babel-evaluate nil)
+
+(require 'org-tempo)
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+(add-to-list 'org-structure-template-alist '("py" . "src python"))
+(add-to-list 'org-structure-template-alist '("go" . "src go"))
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 
 (use-package org-bullets
   :after org
@@ -268,12 +287,24 @@
 (use-package magit)
 (use-package forge)
 
+;; make sure emacs use the proper ENV VAR
+(use-package exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+;; for daemon only
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
 ;; Which Key
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.5))
+
+;; rainbow delimiter
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; Theme
 (use-package doom-themes
@@ -295,7 +326,7 @@
  '(custom-safe-themes
    '("d6603a129c32b716b3d3541fc0b6bfe83d0e07f1954ee64517aa62c9405a3441" "bf387180109d222aee6bb089db48ed38403a1e330c9ec69fe1f52460a8936b66" "e6ff132edb1bfa0645e2ba032c44ce94a3bd3c15e3929cdf6c049802cf059a2a" "77113617a0642d74767295c4408e17da3bfd9aa80aaa2b4eeb34680f6172d71a" "76bfa9318742342233d8b0b42e824130b3a50dcc732866ff8e47366aed69de11" "be9645aaa8c11f76a10bcf36aaf83f54f4587ced1b9b679b55639c87404e2499" "711efe8b1233f2cf52f338fd7f15ce11c836d0b6240a18fffffc2cbd5bfe61b0" default))
  '(package-selected-packages
-   '(evil-surround forge evil-magit magit projectile evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
+   '(ob-go rainbow-delimiters evil-surround forge evil-magit magit projectile evil-commentary undo-fu hydra evil-collection general helpful counsel ivy-rich which-key vterm ivy use-package evil doom-themes doom-modeline))
  '(which-key-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
