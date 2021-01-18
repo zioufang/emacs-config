@@ -66,7 +66,7 @@
   :ensure nil
   :commands (dired dired-jump)
   :bind (("C-x C-d" . dired-jump))
-  :custom 
+  :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
   ;; not use macos ls
@@ -216,6 +216,9 @@
                   (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
 
+  (custom-theme-set-faces 'user
+                        `(org-level-3 ((t (:foreground "sky blue")))))
+
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
@@ -233,7 +236,14 @@
   :config
   (setq org-ellipsis " ▾")
   (dot-org-font-setup)
+  ;; keybindings
+  ;; remove C-j/k for org-forward/backward-heading-same-level
+  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
+  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
+  ;; moving up one element
+  (define-key org-mode-map (kbd "<normal-state> K") 'org-up-element)
   )
+
 
 (use-package org-bullets
   :after org
@@ -283,9 +293,6 @@
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
-  ;; remove C-j/k for org-forward/backward-heading-same-level
-  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
-  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
 )
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
 ;; define an ex kestroke to a func

@@ -40,7 +40,7 @@ install font =Cantarell=
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :font dot-variable-font :height (+ dot-font-size 30) :weight 'regular)
 #+end_src
-** UI
+** Basic UI
 #+begin_src emacs-lisp
 (setq inhibit-startup-message t)
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -85,7 +85,7 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :ensure nil
   :commands (dired dired-jump)
   :bind (("C-x C-d" . dired-jump))
-  :custom 
+  :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
   ;; not use macos ls
@@ -230,6 +230,7 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
 #+end_src
 * Org Mode
 ** Look & Feel
+list emacs colour name with =list-colors-display=
 #+begin_src emacs-lisp
 (defun dot-org-mode-setup ()
   (org-indent-mode)
@@ -252,6 +253,9 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
                   (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
 
+  (custom-theme-set-faces 'user
+                        `(org-level-3 ((t (:foreground "sky blue")))))
+
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
@@ -269,7 +273,14 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :config
   (setq org-ellipsis " ▾")
   (dot-org-font-setup)
+  ;; keybindings
+  ;; remove C-j/k for org-forward/backward-heading-same-level
+  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
+  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
+  ;; moving up one element
+  (define-key org-mode-map (kbd "<normal-state> K") 'org-up-element)
   )
+
 
 (use-package org-bullets
   :after org
@@ -359,9 +370,6 @@ func = <<the-func()>>
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
-  ;; remove C-j/k for org-forward/backward-heading-same-level
-  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
-  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
 )
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
 ;; define an ex kestroke to a func
@@ -444,8 +452,11 @@ func = <<the-func()>>
 
 #+end_src
 * Todos
-- [ ] Stop dd/yy to sys clipboard
+- [ ] Stop dd/yy to sys clipboard (http://web.archive.org/web/20150313145313/http://www.codejury.com/bypassing-the-clipboard-in-emacs-evil-mode/ )
+  https://emacs.stackexchange.com/questions/14940/evil-mode-visual-selection-copies-text-to-clipboard-automatically/15054#15054
 - [ ] Ivy open in split (counsel-fzf & ace-window)
+- [ ] unify keybinding place
+- [ ] Replace exec-path-from-shell
 - [ ] Tab spaces in different language mode
 - [ ] Bind key sequence like nmap
 - [ ] Setup snippet
