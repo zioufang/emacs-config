@@ -1,5 +1,6 @@
 #+title: Dot Emacs
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
+`check-parens` for paren syntax error in elisp
 * Basics
 ** Startup Tricks
 #+begin_src emacs-lisp
@@ -312,6 +313,39 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
       (org-babel-tangle))))
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot-org-babel-tangle-config)))
 #+end_src
+** Notes
+*** keybind
+  - Ctrl-Enter: new heading of the same level
+  - Alt-Enter: new list of the same level
+  - Alt-arrow/jk: move headings inside parent
+  - Shift-Alt_arrow: move line by line
+  - Shift-Enter: add new todo/checkbox item
+  - Shift-left/right: cycle todo status
+*** Noweb
+to have the value passed through different code block, note =:tangle no= is to exclude the blocks from =init.el=
+#+NAME: the-value
+#+begin_src emacs-lisp :tangle no
+55
+#+end_src
+
+#+NAME: the-func
+#+begin_src emacs-lisp :tangle no
+(+ 5 10)
+#+end_src
+
+#+begin_src emacs-lisp :noweb-ref packages :noweb-sep "" :tangle no
+sklearn
+fastapi
+numpy
+#+end_src
+
+Add =:noweb yes=
+#+begin_src emacs-lisp :noweb yes :tangle no
+value = <<the-value>>
+func = <<the-func()>>
+<<packages>>
+#+end_src
+
 * Dev
 ** Evil
 #+begin_src emacs-lisp
@@ -409,3 +443,9 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :hook (prog-mode . rainbow-delimiters-mode))
 
 #+end_src
+* Todos
+- [ ] Stop dd/yy to sys clipboard
+- [ ] Ivy open in split (counsel-fzf & ace-window)
+- [ ] Tab spaces in different language mode
+- [ ] Bind key sequence like nmap
+- [ ] Setup snippet
