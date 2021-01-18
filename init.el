@@ -42,7 +42,17 @@
 
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
-(setq-default tab-width 4)
+(setq-default tab-width 2)
+
+(add-hook 'python-mode-hook
+      (lambda ()
+        (setq tab-width 4)
+        (setq python-indent-offset 4)))
+
+(add-hook 'go-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook 'gofmt-before-save)
+            (setq tab-width 4)))
 ;; make tab key do indent first then completion.
 (setq-default tab-always-indent 'complete)
 (progn
@@ -198,6 +208,7 @@
 (defun dot-org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
+  (set-variable 'org-hide-emphasis-markers t)
   (visual-line-mode 1))
 
 (defun dot-org-font-setup ()
@@ -228,6 +239,14 @@
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
+(defun org-toggle-emphasis ()
+  "Toggle hiding/showing of org emphasize markers."
+  (interactive)
+  (if org-hide-emphasis-markers
+      (set-variable 'org-hide-emphasis-markers nil)
+    (set-variable 'org-hide-emphasis-markers t))
+  )
+
 (setq org-todo-keywords
   '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
 
@@ -242,8 +261,9 @@
   (define-key org-mode-map (kbd "<normal-state> C-k") nil)
   ;; moving up one element
   (define-key org-mode-map (kbd "<normal-state> K") 'org-up-element)
+  ;; toggle emphasis
+  (define-key org-mode-map (kbd "C-c e") 'org-toggle-emphasis)
   )
-
 
 (use-package org-bullets
   :after org
@@ -273,6 +293,44 @@
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
 (add-to-list 'org-structure-template-alist '("go" . "src go"))
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+
+(use-package hide-mode-line)
+
+(defun dot/presentation-setup ()
+  ;; Hide the mode line
+  (hide-mode-line-mode 1)
+
+  ;; Display images inline
+  (org-display-inline-images) ;; Can also use org-startup-with-inline-images
+
+  ;; Scale the text.  The next line is for basic scaling:
+  (setq text-scale-mode-amount 3)
+  (text-scale-mode 1))
+
+  ;; This option is more advanced, allows you to scale other faces too
+  ;; (setq-local face-remapping-alist '((default (:height 2.0) variable-pitch)
+  ;;                                    (org-verbatim (:height 1.75) org-verbatim)
+  ;;                                    (org-block (:height 1.25) org-block))))
+
+(defun dot/presentation-end ()
+  ;; Show the mode line again
+  (hide-mode-line-mode 0)
+
+  ;; Turn off text scale mode (or use the next line if you didn't use text-scale-mode)
+  ;; (text-scale-mode 0))
+
+  ;; If you use face-remapping-alist, this clears the scaling:
+  (setq-local face-remapping-alist '((default variable-pitch default))))
+
+(use-package org-tree-slide
+  :hook ((org-tree-slide-play . dot/presentation-setup)
+         (org-tree-slide-stop . dot/presentation-end))
+  :custom
+  (org-tree-slide-slide-in-effect t)
+  (org-tree-slide-activate-message "Presentation started!")
+  (org-tree-slide-deactivate-message "Presentation finished!")
+  (org-tree-slide-breadcrumbs " > ")
+  (org-image-actual-width nil))
 
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun dot-org-babel-tangle-config ()
