@@ -5,6 +5,21 @@
     (setq gc-cons-threshold 16777216 ; 16mb
           gc-cons-percentage 0.1)))
 
+;; Initialize package sources
+(require 'package)
+(setq package-enable-at-startup nil)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
+(package-initialize)
+
+;; Bootstrap `use-package`
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+
 (defvar dot-font-size 150)
 (defvar dot-mono-font"JetBrains Mono")
 (defvar dot-variable-font "Cantarell")
@@ -47,70 +62,27 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
-;; Initialize package sources
-(require 'package)
-(setq package-enable-at-startup nil)
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
-(package-initialize)
-
-;; Bootstrap `use-package`
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(require 'use-package)
-(setq use-package-always-ensure t)
-
-;; TODO make them one func with folder path
-(defun dot-find-org ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects/org"))
-
-(defun dot-find-proj ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects"))
-
-(use-package general
+(use-package dired
+  :ensure nil
+  :commands (dired dired-jump)
+  :bind (("C-x C-d" . dired-jump))
+  :custom 
+  (dired-listing-switches "-Agho --group-directories-first")
   :config
-  (general-create-definer leaderkey
-    :keymaps '(normal insert visual emacs)
-    :prefix "SPC"
-    :non-normal-prefix "M-SPC"
-  )
-  ;; evil mapping
-  (general-evil-setup)
-  (general-nmap
-    "C-k" 'evil-window-up
-    "C-j" 'evil-window-down
-    "C-h" 'evil-window-left
-    "C-l" 'evil-window-right)
-  ;; global mapping
-  (general-define-key
-    "C-s"   'swiper
-    "C-M-b" 'ivy-switch-buffer
-    "C-M-f" 'counsel-find-file
-    "C-M-p" 'dot-find-proj
-    "C-M-o" 'dot-find-org
-  )
-  (leaderkey
-    "h" '(:ignore h :which-key "hydra commands")
-    "p" '(projectile-command-map :which-key "projectile commands")
-    )
-)
+  ;; not use macos ls
+  (when (equal system-type 'darwin)
+    (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
 
-(use-package hydra)
+(use-package dired-single)
 
-(defhydra hydra-text-scale (:timeout 4)
-  "scale font size"
-  ("k" text-scale-increase "increase")
-  ("j" text-scale-decrease "decrease")
-  ("q" nil "quit" :exit t))
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
 
-(leaderkey
-  "hf" '(hydra-text-scale/body :which-key "scale font size"))
+(use-package dired-hide-dotfiles
+  :hook (dired-mode . dired-hide-dotfiles-mode)
+  :config
+  (evil-collection-define-key 'normal 'dired-mode-map
+    "gh" 'dired-hide-dotfiles-mode))
 
 (use-package ivy
   :diminish
@@ -169,6 +141,59 @@
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.5))
+
+(use-package command-log-mode)
+
+;; TODO make them one func with folder path
+(defun dot-find-org ()
+    "Open Org Dir"
+    (interactive)
+    (counsel-find-file "~/projects/org"))
+
+(defun dot-find-proj ()
+    "Open Org Dir"
+    (interactive)
+    (counsel-find-file "~/projects"))
+
+(use-package general
+  :config
+  (general-create-definer leaderkey
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :non-normal-prefix "M-SPC"
+  )
+  ;; evil mapping
+  (general-evil-setup)
+  (general-nmap
+    "C-k" 'evil-window-up
+    "C-j" 'evil-window-down
+    "C-h" 'evil-window-left
+    "C-l" 'evil-window-right
+    "-" 'dired-jump)
+  ;; global mapping
+  (general-define-key
+    "C-s"   'swiper
+    "C-M-b" 'ivy-switch-buffer
+    "C-M-f" 'counsel-find-file
+    "C-M-p" 'dot-find-proj
+    "C-M-o" 'dot-find-org
+  )
+  (leaderkey
+    "h" '(:ignore h :which-key "hydra commands")
+    "p" '(projectile-command-map :which-key "projectile commands")
+    )
+)
+
+(use-package hydra)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale font size"
+  ("k" text-scale-increase "increase")
+  ("j" text-scale-decrease "decrease")
+  ("q" nil "quit" :exit t))
+
+(leaderkey
+  "hf" '(hydra-text-scale/body :which-key "scale font size"))
 
 (defun dot-org-mode-setup ()
   (org-indent-mode)
@@ -257,8 +282,11 @@
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
-  (evil-set-initial-state 'dashboard-mode 'normal))
-
+  (evil-set-initial-state 'dashboard-mode 'normal)
+  ;; remove C-j/k for org-forward/backward-heading-same-level
+  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
+  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
+)
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
 ;; define an ex kestroke to a func
 ;; (eval-after-load 'evil-ex
