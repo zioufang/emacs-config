@@ -1,10 +1,17 @@
+#+title: Dot Emacs
+#+PROPERTY: header-args:emacs-lisp :tangle ./init.el
+* Basics
+** Startup Tricks
+#+begin_src emacs-lisp
 (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
       gc-cons-percentage 0.6)
 (add-hook 'emacs-startup-hook
   (lambda ()
     (setq gc-cons-threshold 16777216 ; 16mb
           gc-cons-percentage 0.1)))
-
+#+end_src
+** Fonts
+#+begin_src emacs-lisp
 (defvar dot-font-size 150)
 (defvar dot-mono-font"JetBrains Mono")
 (defvar dot-variable-font "Cantarell")
@@ -13,14 +20,18 @@
 (set-face-attribute 'fixed-pitch nil :font dot-mono-font :height dot-font-size)
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :font dot-variable-font :height (+ dot-font-size 30) :weight 'regular)
-
+#+end_src
+** UI
+#+begin_src emacs-lisp
 (setq inhibit-startup-message t)
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
 (tooltip-mode -1)           ; Disable tooltips
 (menu-bar-mode -1)            ; Disable the menu bar
 (set-fringe-mode 5)        ; Give some breathing room
-
+#+end_src
+** Editor Settings
+#+begin_src emacs-lisp
 (auto-revert-mode t)    ;; auto load file when changed
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
@@ -46,7 +57,9 @@
 
 ;; hightlight current line
 (global-hl-line-mode t)
-
+#+end_src
+** Package Manager
+#+begin_src emacs-lisp
 ;; Initialize package sources
 (require 'package)
 (setq package-enable-at-startup nil)
@@ -61,7 +74,10 @@
   (package-install 'use-package))
 (require 'use-package)
 (setq use-package-always-ensure t)
-
+#+end_src
+* Keybindings
+** General
+#+begin_src emacs-lisp
 ;; TODO make them one func with folder path
 (defun dot-find-org ()
     "Open Org Dir"
@@ -100,7 +116,9 @@
     "p" '(projectile-command-map :which-key "projectile commands")
     )
 )
-
+#+end_src
+** Hydra
+#+begin_src emacs-lisp
 (use-package hydra)
 
 (defhydra hydra-text-scale (:timeout 4)
@@ -111,7 +129,11 @@
 
 (leaderkey
   "hf" '(hydra-text-scale/body :which-key "scale font size"))
+#+end_src
 
+* UI
+** Ivy & Counsel
+#+begin_src emacs-lisp
 (use-package ivy
   :diminish
   :bind (
@@ -150,7 +172,9 @@
   ([remap describe-command] . helpful-command)
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
-
+#+end_src
+** Theme
+#+begin_src emacs-lisp
 ;; Theme
 (use-package doom-themes
   :config
@@ -162,14 +186,19 @@
 
 ; M-x all-the-icons-install-fonts
 (use-package all-the-icons)
-
+#+end_src
+** Which Key
+#+begin_src emacs-lisp
 ;; Which Key
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.5))
-
+#+end_src
+* Org Mode
+** Look & Feel
+#+begin_src emacs-lisp
 (defun dot-org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -223,7 +252,9 @@
 
 (use-package visual-fill-column
   :hook (org-mode . dot-org-mode-visual-fill))
-
+#+end_src
+** Babel
+#+begin_src emacs-lisp
 (require 'ob-go)
 (org-babel-do-load-languages
   'org-babel-load-languages
@@ -238,7 +269,9 @@
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
 (add-to-list 'org-structure-template-alist '("go" . "src go"))
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-
+#+end_src
+** Auto-tangle Config
+#+begin_src emacs-lisp
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun dot-org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
@@ -247,7 +280,10 @@
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot-org-babel-tangle-config)))
-
+#+end_src
+* Dev
+** Evil
+#+begin_src emacs-lisp
 (use-package evil
   :init
   (setq evil-want-C-u-scroll t)
@@ -296,7 +332,10 @@
       undo-outer-limit 3000000)
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+#+end_src
 
+** Projectile
+#+begin_src emacs-lisp
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
   :diminish projectile-mode
@@ -313,10 +352,14 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
-
+#+end_src
+** Magit
+#+begin_src emacs-lisp
 (use-package magit)
 (use-package forge)
-
+#+end_src
+** Misc
+#+begin_src emacs-lisp
 (use-package vterm)
 
 ;; Make sure emacs use the proper ENV VAR
@@ -330,3 +373,5 @@
 ;; rainbow delimiter
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+#+end_src
