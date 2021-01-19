@@ -74,6 +74,11 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
+;; enable recentf
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(setq recentf-max-saved-items 25)
+
 (use-package dired
   :ensure nil
   :commands (dired dired-jump)
@@ -412,6 +417,7 @@
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
+  :hook (lsp-mode . (lsp-headerline-breadcrumb-mode nil))
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
