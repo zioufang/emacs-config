@@ -40,6 +40,8 @@
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
 
+(setq default-directory "~/projects")
+
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
@@ -122,6 +124,13 @@
   :init
   (ivy-rich-mode 1))
 
+(use-package ivy-prescient
+  :after counsel
+  :config
+  (ivy-prescient-mode 1)
+  (prescient-persist-mode 1)
+  (setq prescient-sort-length-enable nil))
+
 ;; better help for counsel
 (use-package helpful
   :custom
@@ -155,15 +164,22 @@
 (use-package command-log-mode)
 
 ;; TODO make them one func with folder path
-(defun dot-find-org ()
+(defun dot/find-org ()
     "Open Org Dir"
     (interactive)
     (counsel-find-file "~/projects/org"))
 
-(defun dot-find-proj ()
+(defun dot/find-proj ()
     "Open Org Dir"
     (interactive)
     (counsel-find-file "~/projects"))
+
+(defun dot/split-dired-jump ()
+    "Split left dired jump"
+    (interactive)
+    (split-window-right)
+    (evil-window-right 1)
+    (dired-jump))
 
 (use-package general
   :config
@@ -179,18 +195,18 @@
     "C-j" 'evil-window-down
     "C-h" 'evil-window-left
     "C-l" 'evil-window-right
-    "-" 'dired-jump)
+    "-" 'dired-jump
+    "_" 'dot/split-dired-jump)
   ;; global mapping
   (general-define-key
     "C-s"   'swiper
     "C-M-b" 'ivy-switch-buffer
     "C-M-f" 'counsel-find-file
-    "C-M-p" 'dot-find-proj
-    "C-M-o" 'dot-find-org
+    "C-M-p" 'dot/find-proj
+    "C-M-o" 'dot/find-org
   )
   (leaderkey
     "h" '(:ignore h :which-key "hydra commands")
-    "p" '(projectile-command-map :which-key "projectile commands")
     )
 )
 
@@ -205,13 +221,13 @@
 (leaderkey
   "hf" '(hydra-text-scale/body :which-key "scale font size"))
 
-(defun dot-org-mode-setup ()
+(defun dot/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
   (set-variable 'org-hide-emphasis-markers t)
   (visual-line-mode 1))
 
-(defun dot-org-font-setup ()
+(defun dot/org-font-setup ()
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
                           '(("^ *\\([-]\\) "
@@ -251,10 +267,10 @@
   '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
 
 (use-package org
-  :hook (org-mode . dot-org-mode-setup)
+  :hook (org-mode . dot/org-mode-setup)
   :config
   (setq org-ellipsis " ▾")
-  (dot-org-font-setup)
+  (dot/org-font-setup)
   ;; keybindings
   ;; remove C-j/k for org-forward/backward-heading-same-level
   (define-key org-mode-map (kbd "<normal-state> C-j") nil)
@@ -271,13 +287,13 @@
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-(defun dot-org-mode-visual-fill ()
+(defun dot/org-mode-visual-fill ()
   (setq visual-fill-column-width 100
         visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
 (use-package visual-fill-column
-  :hook (org-mode . dot-org-mode-visual-fill))
+  :hook (org-mode . dot/org-mode-visual-fill))
 
 (require 'ob-go)
 (org-babel-do-load-languages
@@ -330,16 +346,20 @@
   (org-tree-slide-activate-message "Presentation started!")
   (org-tree-slide-deactivate-message "Presentation finished!")
   (org-tree-slide-breadcrumbs " > ")
-  (org-image-actual-width nil))
+  (org-image-actual-width nil)
+  (org-tree-slide-header nil)
+  :config
+  (define-key org-tree-slide-mode-map (kbd "C-<left>") 'org-tree-slide-move-previous-tree)
+  (define-key org-tree-slide-mode-map (kbd "C-<right>") 'org-tree-slide-move-next-tree))
 
 ;; Automatically tangle our Emacs.org config file when we save it
-(defun dot-org-babel-tangle-config ()
+(defun dot/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
                       (expand-file-name "~/projects/emacs/dotemacs.org"))
     ;; Dynamic scoping to the rescue
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot-org-babel-tangle-config)))
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot/org-babel-tangle-config)))
 
 (use-package evil
   :init
@@ -390,11 +410,57 @@
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+;; in-buffer completion interface
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 2)
+  (company-idle-delay 0.0))
+
+;; icon + others pretty stuff
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+(use-package lsp-python-ms
+  :init (setq lsp-python-ms-auto-install-server t)
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-python-ms)
+                          (lsp)))
+  :custom
+  (python-shell-interpreter "python3"))
+                     
+(use-package pyvenv
+  :config
+  (pyvenv-mode 1))
+
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
   :custom ((projectile-completion-system 'ivy))
+  :bind-keymap ("C-c p" . projectile-command-map)
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
   (when (file-directory-p "~/projects")
@@ -410,10 +476,13 @@
 (use-package magit)
 (use-package forge)
 
-(use-package vterm)
+(use-package vterm
+:commands vterm
+:config (setq vterm-max-scrollback 10000))
 
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell)
+;; disable auto load as it is slow
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 ;; for daemon only
