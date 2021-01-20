@@ -37,11 +37,10 @@
 (set-fringe-mode 5)        ; Give some breathing room
 
 (auto-revert-mode t)    ;; auto load file when changed
-
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
-
 (setq default-directory "~/projects")
-
+(setq max-lisp-eval-depth 100000)  ;; for lsp-mode
+(setq max-specpdl-size 12000)  ;; for lsp-mode
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
@@ -91,6 +90,23 @@
     (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
 
 (use-package dired-single)
+(defun dot/dired-init ()
+  "Bunch of stuff to run for dired, either immediately or when it's
+   loaded."
+  ;; <add other stuff here>
+  (define-key dired-mode-map [remap dired-find-file]
+    'dired-single-buffer)
+  (define-key dired-mode-map [remap dired-mouse-find-file-other-window]
+    'dired-single-buffer-mouse)
+  (define-key dired-mode-map [remap dired-up-directory]
+    'dired-single-up-directory))
+
+;; if dired's already loaded, then the keymap will be bound
+(if (boundp 'dired-mode-map)
+    ;; we're good to go; just add our bindings
+    (dot/dired-init)
+  ;; it's not loaded yet, so add our bindings to the load-hook
+  (add-hook 'dired-load-hook 'dot/dired-init))
 
 (use-package all-the-icons-dired
   :hook (dired-mode . all-the-icons-dired-mode))
@@ -164,7 +180,7 @@
   :init (which-key-mode)
   :diminish which-key-mode
   :config
-  (setq which-key-idle-delay 0.5))
+  (setq which-key-idle-delay 0.2))
 
 (use-package command-log-mode)
 
@@ -178,6 +194,11 @@
     "Open Org Dir"
     (interactive)
     (counsel-find-file "~/projects"))
+
+(defun dot/go-to-dotemacs ()
+    "Go To Emacs Config File"
+    (interactive)
+    (find-file "~/projects/emacs-config/dotemacs.org"))
 
 (defun dot/split-dired-jump ()
     "Split left dired jump"
@@ -205,14 +226,26 @@
   ;; global mapping
   (general-define-key
     "C-s"   'swiper
-    "C-M-b" 'ivy-switch-buffer
-    "C-M-f" 'counsel-find-file
+    "C-M-r" 'counsel-recentf
     "C-M-p" 'dot/find-proj
     "C-M-o" 'dot/find-org
+    "C-M-e" 'dot/go-to-dotemacs
   )
   (leaderkey
     "h" '(:ignore h :which-key "hydra commands")
+    "t" '(vterm-toggle :which-key "toggle vterm")
+    "p" '(counsel-projectile-switch-project :which-key "switch project")
+    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+    "B" '(ivy-switch-buffer :which-key "switch buffer")
+    "f" '(counsel-projectile-find-file :which-key "project find file")
+    "F" '(counsel-find-file :which-key "find file")
+    "r" '(counsel-projectile-rg :which-key "project ripgrep")
     )
+  ;; dired-mode workarounds
+  ;; (general-define-key
+  ;;   :states 'normal
+  ;;   :keymaps 'dired-mode-map
+  ;; )
 )
 
 (use-package hydra)
@@ -352,7 +385,6 @@
   (org-tree-slide-deactivate-message "Presentation finished!")
   (org-tree-slide-breadcrumbs " > ")
   (org-image-actual-width nil)
-  (org-tree-slide-header nil)
   :config
   (define-key org-tree-slide-mode-map (kbd "C-<left>") 'org-tree-slide-move-previous-tree)
   (define-key org-tree-slide-mode-map (kbd "C-<right>") 'org-tree-slide-move-next-tree))
@@ -360,7 +392,7 @@
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun dot/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/projects/emacs/dotemacs.org"))
+                      (expand-file-name "~/projects/emacs-config/dotemacs.org"))
     ;; Dynamic scoping to the rescue
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
@@ -423,11 +455,6 @@
   :config
   (lsp-enable-which-key-integration t))
 
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom
-  (lsp-ui-doc-position 'bottom))
-
 ;; in-buffer completion interface
 (use-package company
   :after lsp-mode
@@ -444,15 +471,16 @@
 (use-package company-box
   :hook (company-mode . company-box-mode))
 
+(use-package lsp-ui)
+
 (use-package lsp-treemacs
   :after lsp)
 
 (use-package lsp-ivy)
 
-(use-package lsp-python-ms
-  :init (setq lsp-python-ms-auto-install-server t)
+(use-package lsp-pyright
   :hook (python-mode . (lambda ()
-                          (require 'lsp-python-ms)
+                          (require 'lsp-pyright)
                           (lsp)))
   :custom
   (python-shell-interpreter "python3"))
@@ -464,16 +492,17 @@
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
   :diminish projectile-mode
-  :config (projectile-mode)
+  :config 
+  (projectile-mode)
+  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
   :custom ((projectile-completion-system 'ivy))
   :bind-keymap ("C-c p" . projectile-command-map)
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
   (when (file-directory-p "~/projects")
     (setq projectile-project-search-path '("~/projects")))
-  (setq projectile-switch-project-action #'projectile-dired))
-  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
-
+  (setq projectile-switch-project-action #'projectile-dired)
+)
 ;; better ivy/counsel integration with M-o
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
@@ -485,6 +514,21 @@
 (use-package vterm
 :commands vterm
 :config (setq vterm-max-scrollback 10000))
+
+(use-package vterm-toggle
+:config
+(setq vterm-toggle-fullscreen-p nil)
+;; open vterm in dedicated bottom window
+(add-to-list 'display-buffer-alist
+             '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                ;; (display-buffer-reuse-window display-buffer-at-bottom)
+                (display-buffer-reuse-window display-buffer-in-direction)
+                ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                (direction . bottom)
+                (dedicated . t) ;dedicated is supported in emacs27
+                (reusable-frames . visible)
+                (window-height . 0.3)))
+)
 
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell)
