@@ -39,16 +39,11 @@
 (auto-revert-mode t)    ;; auto load file when changed
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
 (setq default-directory "~/projects")
-(setq max-lisp-eval-depth 100000)  ;; for lsp-mode
-(setq max-specpdl-size 12000)  ;; for lsp-mode
+(setq max-lisp-eval-depth 10000)  ;; for lsp-mode
+(setq max-specpdl-size 5000)  ;; for lsp-mode
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
-
-(add-hook 'python-mode-hook
-      (lambda ()
-        (setq tab-width 4)
-        (setq python-indent-offset 4)))
 
 (add-hook 'go-mode-hook
           (lambda ()
@@ -448,12 +443,14 @@
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
 (use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :hook (lsp-mode . (lsp-headerline-breadcrumb-mode nil))
+  :commands lsp
+  :hook 
+  (python-mode . lsp)
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
-  (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t)
+  (setq lsp-headerline-breadcrumb-enable nil))
 
 ;; in-buffer completion interface
 (use-package company
@@ -477,6 +474,11 @@
   :after lsp)
 
 (use-package lsp-ivy)
+
+(add-hook 'python-mode-hook
+      (lambda ()
+        (setq tab-width 4)
+        (setq python-indent-offset 4)))
 
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
