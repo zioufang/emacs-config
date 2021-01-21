@@ -170,6 +170,14 @@
 ; M-x all-the-icons-install-fonts
 (use-package all-the-icons)
 
+(use-package yascroll
+  :init (global-yascroll-bar-mode 1)
+  :config
+  (set-face-attribute 'yascroll:thumb-text-area nil :background "steel blue")
+  (set-face-attribute 'yascroll:thumb-fringe nil :background "steel blue" :foreground "steel blue")
+  :custom (yascroll:delay-to-hide 0.8)
+)
+
 ;; Which Key
 (use-package which-key
   :init (which-key-mode)
@@ -528,8 +536,6 @@
   :config (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 
-;; evil keybindings
-;; https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
