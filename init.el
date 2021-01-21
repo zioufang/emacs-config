@@ -235,6 +235,7 @@
     "f" '(counsel-projectile-find-file :which-key "project find file")
     "F" '(counsel-find-file :which-key "find file")
     "r" '(counsel-projectile-rg :which-key "project ripgrep")
+    "SPC" '(magit-status :which-key "magit status")
     )
   ;; dired-mode workarounds
   ;; (general-define-key
@@ -443,14 +444,19 @@
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
 (use-package lsp-mode
-  :commands lsp
+  :defer t
+  :commands (lsp lsp-deferred)
   :hook 
-  (python-mode . lsp)
+  (python-mode . lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
   :config
   (lsp-enable-which-key-integration t)
-  (setq lsp-headerline-breadcrumb-enable nil))
+  (setq lsp-headerline-breadcrumb-enable nil)
+  ;; ignore files for file watcher
+  (setq lsp-file-watch-ignored-directories 
+        (append '("[/\\\\]\\venv\\'") lsp-file-watch-ignored-directories))
+)
 
 ;; in-buffer completion interface
 (use-package company
@@ -468,10 +474,20 @@
 (use-package company-box
   :hook (company-mode . company-box-mode))
 
-(use-package lsp-ui)
+(use-package flycheck
+  :init (global-flycheck-mode))
+
+(use-package lsp-ui
+:after lsp-mode
+:init
+(setq lsp-ui-sideline-show-diagnostics t
+      lsp-ui-sideline-show-hover nil
+      lsp-ui-sideline-show-code-actions nil
+      lsp-ui-doc-enable nil
+))
 
 (use-package lsp-treemacs
-  :after lsp)
+  :after lsp-mode)
 
 (use-package lsp-ivy)
 
@@ -483,9 +499,11 @@
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
-                          (lsp)))
-  :custom
-  (python-shell-interpreter "python3"))
+                          (lsp-deferred)))
+  :init (when (executable-find "python3"
+        (setq lsp-pyright-python-executable-cmd "python3")))
+  :custom (python-shell-interpreter "python3")
+)
                      
 (use-package pyvenv
   :config
@@ -510,7 +528,12 @@
   :config (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 
-(use-package magit)
+;; evil keybindings
+;; https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
 (use-package forge)
 
 (use-package vterm
