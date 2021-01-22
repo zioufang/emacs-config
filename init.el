@@ -562,9 +562,22 @@
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp-deferred)))
-  :init (when (executable-find "python3"
+  :init 
+  (when (executable-find "python3"
         (setq lsp-pyright-python-executable-cmd "python3")))
+  :custom (lsp-pyright-typechecking-mode "off")
 )
+
+(use-package blacken
+  :after python
+  :custom (blacken-line-length 119))
+
+(add-hook 'before-save-hook 'blacken-buffer)
+
+(defun dot/lsp-go-before-save-hooks ()
+  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+(add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
