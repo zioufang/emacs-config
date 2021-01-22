@@ -86,8 +86,7 @@
 
 (use-package dired-single)
 (defun dot/dired-init ()
-  "Bunch of stuff to run for dired, either immediately or when it's
-   loaded."
+  "Bunch of stuff to run for dired, either immediately or when it's loaded."
   ;; <add other stuff here>
   (define-key dired-mode-map [remap dired-find-file]
     'dired-single-buffer)
@@ -463,7 +462,7 @@
   (setq lsp-headerline-breadcrumb-enable nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories 
-        (append '("[/\\\\]\\venv\\'") lsp-file-watch-ignored-directories))
+        (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
 )
 
 ;; in-buffer completion interface
@@ -499,23 +498,49 @@
 
 (use-package lsp-ivy)
 
-(add-hook 'python-mode-hook
-      (lambda ()
-        (setq tab-width 4)
-        (setq python-indent-offset 4)))
+;; Built-in Python utilities
+(use-package python
+  :config
+  ;; Remove guess indent python message
+  (setq python-indent-guess-indent-offset-verbose nil))
 
+;; auto switching python venv to <project>/.venv
+;; https://github.com/jorgenschaefer/pyvenv/issues/51
+(defun dot/pyvenv-autoload ()
+          (interactive)
+          "auto activate venv directory if exists"
+          (f-traverse-upwards (lambda (path)
+              (let ((venv-path (f-expand ".venv" path)))
+              (when (f-exists? venv-path)
+              (pyvenv-activate venv-path))))))
+
+(use-package pyvenv
+  :hook (python-mode . dot/pyvenv-autoload)
+  :config
+  ;; Use IPython when available or fall back to regular Python 
+  (cond
+   ((executable-find "ipython")
+    (progn
+      (setq python-shell-buffer-name "ipython")
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i --simple-prompt")))
+   ((executable-find "python3")
+    (setq python-shell-interpreter "python3")))
+  (pyvenv-mode 1))
+
+;; Hide the modeline for inferior python processes
+(use-package inferior-python-mode
+  :ensure nil
+  :hook (inferior-python-mode . hide-mode-line-mode))
+
+;; pyright, it detects venv/.venv automatically 
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp-deferred)))
   :init (when (executable-find "python3"
         (setq lsp-pyright-python-executable-cmd "python3")))
-  :custom (python-shell-interpreter "python3")
 )
-                     
-(use-package pyvenv
-  :config
-  (pyvenv-mode 1))
 
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
