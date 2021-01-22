@@ -202,6 +202,16 @@
     (interactive)
     (find-file "~/projects/emacs-config/dotemacs.org"))
 
+(defun dot/toggle-frame ()
+    "
+    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+    Mimic toggling maximized buffer behaviour in full screen mode
+    "
+    (interactive)
+    (if (eq (length (visible-frame-list)) 1)
+        (make-frame)
+        (delete-frame)))
+
 (defun dot/split-dired-jump ()
     "Split left dired jump"
     (interactive)
@@ -227,6 +237,7 @@
     "_" 'dot/split-dired-jump)
   ;; global mapping
   (general-define-key
+    "<f12>"   'dot/toggle-frame
     "C-s"   'swiper
     "C-M-r" 'counsel-recentf
     "C-M-p" 'dot/find-proj
