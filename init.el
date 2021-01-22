@@ -45,15 +45,26 @@
 (setq default-directory "~/projects")
 (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
 (setq max-specpdl-size 5000)  ;; for lsp-mode
+
+;; start every frame maximized
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
 
-;; store all backup and autosave files in the tmp dir
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
+;; no littering
+(setq user-emacs-directory "~/.cache/emacs")
+(use-package no-littering)
 (setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+;; replaced by no-littering
+;; store all backup and autosave files in the tmp dir
+;; (setq backup-directory-alist
+;;       `((".*" . ,temporary-file-directory)))
+;; (setq auto-save-file-name-transforms
+;;       `((".*" ,temporary-file-directory t)))
 
 ;; make tab key do indent first then completion.
 (setq-default tab-always-indent 'complete)
@@ -78,6 +89,13 @@
 (recentf-mode 1)
 (setq recentf-max-menu-items 25)
 (setq recentf-max-saved-items 25)
+
+;; auto remove trailing whitespace
+(setq show-trailing-whitespace t)
+(add-hook 'before-save-hook
+          (lambda ()
+            (unless (eq major-mode 'markdown-mode)
+              (delete-trailing-whitespace))))
 
 (use-package dired
   :ensure nil
@@ -211,7 +229,7 @@
 (defun dot/toggle-frame ()
     "
     Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-    Mimic toggling maximized buffer behaviour in full screen mode
+    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
     "
     (interactive)
     (if (eq (length (visible-frame-list)) 1)
@@ -470,7 +488,7 @@
 (use-package lsp-mode
   :defer t
   :commands (lsp lsp-deferred)
-  :hook 
+  :hook
   (python-mode . lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
@@ -478,7 +496,7 @@
   (lsp-enable-which-key-integration t)
   (setq lsp-headerline-breadcrumb-enable nil)
   ;; ignore files for file watcher
-  (setq lsp-file-watch-ignored-directories 
+  (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
 )
 
@@ -520,7 +538,7 @@
   :config
   ;; Remove guess indent python message
   (setq python-indent-guess-indent-offset-verbose nil)
-  ;; Use IPython when available or fall back to regular Python 
+  ;; Use IPython when available or fall back to regular Python
   (cond
    ((executable-find "ipython")
     (progn
@@ -547,7 +565,7 @@
   :after python
   :hook (python-mode . dot/pyvenv-autoload)
   :config
-  ;; Use IPython when available or fall back to regular Python 
+  ;; Use IPython when available or fall back to regular Python
   (cond
    ((executable-find "ipython")
     (progn
@@ -563,12 +581,12 @@
   :ensure nil
   :hook (inferior-python-mode . hide-mode-line-mode))
 
-;; pyright, it detects venv/.venv automatically 
+;; pyright, it detects venv/.venv automatically
 (use-package lsp-pyright
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp-deferred)))
-  :init 
+  :init
   (when (executable-find "python3"
         (setq lsp-pyright-python-executable-cmd "python3")))
   :custom (lsp-pyright-typechecking-mode "off")
@@ -596,7 +614,7 @@
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
   :diminish projectile-mode
-  :config 
+  :config
   (projectile-mode)
   (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
   :custom ((projectile-completion-system 'ivy))
