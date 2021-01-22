@@ -483,7 +483,7 @@
   :after lsp-mode
   :hook (lsp-mode . company-mode)
   :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
+         ("<tab>" . company-complete-common-or-cycle))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :custom
