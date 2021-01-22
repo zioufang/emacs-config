@@ -502,7 +502,19 @@
 (use-package python
   :config
   ;; Remove guess indent python message
-  (setq python-indent-guess-indent-offset-verbose nil))
+  (setq python-indent-guess-indent-offset-verbose nil)
+  ;; Use IPython when available or fall back to regular Python 
+  (cond
+   ((executable-find "ipython")
+    (progn
+      (setq python-shell-buffer-name "ipython")
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i --simple-prompt")))
+   ((executable-find "python3")
+    (setq python-shell-interpreter "python3")))
+  ;; change docstring color to be the same of comment
+  (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
+)
 
 ;; auto switching python venv to <project>/.venv
 ;; https://github.com/jorgenschaefer/pyvenv/issues/51
@@ -515,6 +527,7 @@
               (pyvenv-activate venv-path))))))
 
 (use-package pyvenv
+  :after python
   :hook (python-mode . dot/pyvenv-autoload)
   :config
   ;; Use IPython when available or fall back to regular Python 
@@ -526,7 +539,7 @@
       (setq python-shell-interpreter-args "-i --simple-prompt")))
    ((executable-find "python3")
     (setq python-shell-interpreter "python3")))
-  (pyvenv-mode 1))
+  (pyvenv-tracking-mode 1))
 
 ;; Hide the modeline for inferior python processes
 (use-package inferior-python-mode
@@ -540,6 +553,10 @@
                           (lsp-deferred)))
   :init (when (executable-find "python3"
         (setq lsp-pyright-python-executable-cmd "python3")))
+)
+
+(use-package go-mode
+:hook (go-mode . lsp-deferred)
 )
 
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/

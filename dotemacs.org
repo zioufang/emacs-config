@@ -1,6 +1,7 @@
 #+title: Dot Emacs
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el :mkdirp yes
 =package-refresh-contents= to update package repos
+=describe-text-properties= to describe face at cursor point
 
 debug errored out config:
 - =C-g= to get out of anything
@@ -307,6 +308,7 @@ project-wide search and replace workflow:
   "hf" '(hydra-text-scale/body :which-key "scale font size"))
 #+end_src
 * Org Mode
+=Shift-Tab= to toggle headings for the whole doc
 ** Look & Feel
 list emacs colour name with =list-colors-display=
 #+begin_src emacs-lisp
@@ -624,7 +626,19 @@ Useful functions:
 (use-package python
   :config
   ;; Remove guess indent python message
-  (setq python-indent-guess-indent-offset-verbose nil))
+  (setq python-indent-guess-indent-offset-verbose nil)
+  ;; Use IPython when available or fall back to regular Python 
+  (cond
+   ((executable-find "ipython")
+    (progn
+      (setq python-shell-buffer-name "ipython")
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i --simple-prompt")))
+   ((executable-find "python3")
+    (setq python-shell-interpreter "python3")))
+  ;; change docstring color to be the same of comment
+  (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
+)
 
 ;; auto switching python venv to <project>/.venv
 ;; https://github.com/jorgenschaefer/pyvenv/issues/51
@@ -637,6 +651,7 @@ Useful functions:
               (pyvenv-activate venv-path))))))
 
 (use-package pyvenv
+  :after python
   :hook (python-mode . dot/pyvenv-autoload)
   :config
   ;; Use IPython when available or fall back to regular Python 
@@ -648,7 +663,7 @@ Useful functions:
       (setq python-shell-interpreter-args "-i --simple-prompt")))
    ((executable-find "python3")
     (setq python-shell-interpreter "python3")))
-  (pyvenv-mode 1))
+  (pyvenv-tracking-mode 1))
 
 ;; Hide the modeline for inferior python processes
 (use-package inferior-python-mode
@@ -664,6 +679,13 @@ Useful functions:
         (setq lsp-pyright-python-executable-cmd "python3")))
 )
 
+#+end_src
+** Go
+install =gopls= and =godef= first
+#+begin_src emacs-lisp
+(use-package go-mode
+:hook (go-mode . lsp-deferred)
+)
 #+end_src
 ** Projectile
 Prefix key: =C-c p=
@@ -741,8 +763,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 - [ ] Ivy open in split (counsel-fzf & ace-window, embark?)
 - [ ] unify keybinding place
 - [ ] Replace exec-path-from-shell
-- [ ] Toggle org-hide-emphasis-markers
-- [ ] Tab spaces in different language mode
 - [ ] Bind key sequence like nmap
+- [ ] auto insert python google style docstring: https://emacs.stackexchange.com/questions/19422/library-for-automatically-inserting-python-docstring-in-google-style
 - [ ] Setup snippet
 
