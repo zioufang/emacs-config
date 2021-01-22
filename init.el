@@ -45,10 +45,12 @@
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
 
-(add-hook 'go-mode-hook
-          (lambda ()
-            (add-hook 'before-save-hook 'gofmt-before-save)
-            (setq tab-width 4)))
+;; store all backup and autosave files in the tmp dir
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
+
 ;; make tab key do indent first then completion.
 (setq-default tab-always-indent 'complete)
 (progn
@@ -582,6 +584,10 @@
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
 )
+
+(use-package terraform-mode)
+
+(use-package dockerfile-mode)
 
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile

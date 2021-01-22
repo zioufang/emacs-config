@@ -66,10 +66,12 @@ install font =Cantarell=
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
 
-(add-hook 'go-mode-hook
-          (lambda ()
-            (add-hook 'before-save-hook 'gofmt-before-save)
-            (setq tab-width 4)))
+;; store all backup and autosave files in the tmp dir
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
+
 ;; make tab key do indent first then completion.
 (setq-default tab-always-indent 'complete)
 (progn
@@ -710,6 +712,14 @@ install =gopls= and =godef= first
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
 )
+#+end_src
+** Terraform
+#+begin_src emacs-lisp
+(use-package terraform-mode)
+#+end_src
+** Dockerfile
+#+begin_src emacs-lisp
+(use-package dockerfile-mode)
 #+end_src
 ** Projectile
 Prefix key: =C-c p=
