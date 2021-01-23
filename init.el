@@ -490,8 +490,7 @@
   :commands (lsp lsp-deferred)
   :hook
   (python-mode . lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c l")
+  :bind-keymap ("C-c l" . lsp-command-map)
   :config
   (lsp-enable-which-key-integration t)
   (setq lsp-headerline-breadcrumb-enable nil)
@@ -533,9 +532,27 @@
 
 (use-package lsp-ivy)
 
+(use-package dap-mode
+  ;; Uncomment the config below if you want all UI panes to be hidden by default!
+  ;; :custom
+  ;; (lsp-enable-dap-auto-configure nil)
+  ;; :config
+  ;; (dap-ui-mode 1)
+
+  :config
+  ;; Bind `C-c l d` to `dap-hydra` for easy access
+  (general-define-key
+    :keymaps 'lsp-mode-map
+    :prefix "C-c"
+    "d" '(dap-hydra t :wk "debugger")))
+
 ;; Built-in Python utilities
 (use-package python
+  :custom
+  (dap-python-debugger 'debugpy)
+  (dap-python-executable "python3")
   :config
+  (require 'dap-python)
   ;; Remove guess indent python message
   (setq python-indent-guess-indent-offset-verbose nil)
   ;; Use IPython when available or fall back to regular Python
