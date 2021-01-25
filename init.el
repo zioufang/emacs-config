@@ -382,6 +382,7 @@
   (visual-fill-column-mode 1))
 
 (use-package visual-fill-column
+  :after org
   :hook (org-mode . dot/org-mode-visual-fill))
 
 (require 'ob-go)
@@ -512,22 +513,6 @@
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
 )
 
-;; in-buffer completion interface
-(use-package company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-common-or-cycle))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 2)
-  (company-idle-delay 0.0))
-
-;; icon + others pretty stuff
-(use-package company-box
-  :hook (company-mode . company-box-mode))
-
 (use-package flycheck
   :init (global-flycheck-mode))
 
@@ -544,6 +529,29 @@
   :after lsp-mode)
 
 (use-package lsp-ivy)
+
+(defun dot/init-company-lsp ()
+  (setq-local company-backends (company-capf :with company-dabbrev-code :with company-yasnippet :with company-files)))
+
+;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
+(use-package company
+  :after lsp-mode
+  :hook
+  (lsp-mode . dot/init-company-lsp)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-common-or-cycle))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :init
+  (global-company-mode)
+  :custom
+  (company-backends '(company-dabbrev-code))
+  (company-minimum-prefix-length 2)
+  (company-idle-delay 0.0))
+
+;; icon + others pretty stuff
+(use-package company-box
+  :hook (company-mode . company-box-mode))
 
 (use-package dap-mode
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
@@ -619,7 +627,9 @@
   :init
   (when (executable-find "python3"
         (setq lsp-pyright-python-executable-cmd "python3")))
-  :custom (lsp-pyright-typechecking-mode "off")
+  :custom
+  (lsp-pyright-typechecking-mode "off")
+  (lsp-pyright-auto-import-completions nil)
 )
 
 (use-package blacken
