@@ -123,6 +123,16 @@ install font =Cantarell=
               (delete-trailing-whitespace))))
 #+end_src
 * UI
+** Tab Bar
+- =tab-new=
+- =tab-close=
+- =tab-rename=
+- =tab-bar-select-tab-by-name=
+#+begin_src emacs-lisp
+(setq tab-bar-new-tab-to `rightmost
+      tab-bar-show t
+)
+#+end_src
 ** Dired
 on Mac, install gnu =ls= first e.g. =brew install coreutils=
 #+begin_src emacs-lisp
@@ -255,46 +265,53 @@ project-wide search and replace workflow:
 * Keybindings
 ** Helper Functions
 #+begin_src emacs-lisp
-;; TODO make them one func with folder path
-(defun dot/find-org ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects/org"))
+  ;; TODO make them one func with folder path
+  (defun dot/find-org ()
+      "Open Org Dir"
+      (interactive)
+      (counsel-find-file "~/projects/org"))
 
-(defun dot/find-proj ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects"))
+  (defun dot/find-proj ()
+      "Open Project Dir"
+      (interactive)
+      (counsel-find-file "~/projects"))
 
-(defun dot/go-to-dotemacs ()
-    "Go To Emacs Config File"
-    (interactive)
-    (find-file "~/projects/emacs-config/dotemacs.org"))
+  (defun dot/go-to-dotemacs ()
+      "Go To Emacs Config File"
+      (interactive)
+      (find-file "~/projects/emacs-config/dotemacs.org"))
 
-(defun dot/toggle-frame ()
-    "
-    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-    "
-    (interactive)
-    (if (eq (length (visible-frame-list)) 1)
-        (make-frame)
-        (delete-frame)))
+  (defun dot/toggle-frame ()
+      "
+      Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+      Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+      "
+      (interactive)
+      (if (eq (length (visible-frame-list)) 1)
+          (make-frame)
+          (delete-frame)))
 
-(defun dot/toggle-maximize-buffer () "Maximize buffer"
-  (interactive)
-  (if (= 1 (length (window-list)))
-      (jump-to-register '_)
-    (progn
-      (window-configuration-to-register '_)
-      (delete-other-windows))))
-
-(defun dot/split-dired-jump ()
-    "Split left dired jump"
+  (defun dot/toggle-maximize-buffer () "Maximize buffer"
     (interactive)
-    (split-window-right)
-    (evil-window-right 1)
-    (dired-jump))
+    (if (= 1 (length (window-list)))
+        (jump-to-register '_)
+      (progn
+        (window-configuration-to-register '_)
+        (delete-other-windows))))
+
+  (defun dot/split-dired-jump ()
+      "Split left dired jump"
+      (interactive)
+      (split-window-right)
+      (evil-window-right 1)
+      (dired-jump))
+
+  (defun dot/new-named-tab (name)
+      "Create a new tab with name inputs, prefixed by its index"
+      (interactive "MNew Tab Name: ")
+      (tab-bar-new-tab)
+      (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+
 #+end_src
 ** General
 #+begin_src emacs-lisp
@@ -324,6 +341,15 @@ project-wide search and replace workflow:
       "C-M-p" 'dot/find-proj
       "C-M-o" 'dot/find-org
       "C-M-e" 'dot/go-to-dotemacs
+    )
+    ;; tab switching
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+      "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+      "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+      "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
+      "C-M-t" 'dot/new-named-tab
     )
     (leaderkey
       "h" '(:ignore h :which-key "hydra commands")

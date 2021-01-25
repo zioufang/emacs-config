@@ -100,6 +100,10 @@
             (unless (eq major-mode 'markdown-mode)
               (delete-trailing-whitespace))))
 
+(setq tab-bar-new-tab-to `rightmost
+      tab-bar-show t
+)
+
 (use-package dired
   :ensure nil
   :commands (dired dired-jump)
@@ -220,7 +224,7 @@
     (counsel-find-file "~/projects/org"))
 
 (defun dot/find-proj ()
-    "Open Org Dir"
+    "Open Project Dir"
     (interactive)
     (counsel-find-file "~/projects"))
 
@@ -254,6 +258,12 @@
     (evil-window-right 1)
     (dired-jump))
 
+(defun dot/new-named-tab (name)
+    "Create a new tab with name inputs, prefixed by its index"
+    (interactive "MNew Tab Name: ")
+    (tab-bar-new-tab)
+    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+
 (use-package general
   :config
   (general-create-definer leaderkey
@@ -280,6 +290,15 @@
     "C-M-p" 'dot/find-proj
     "C-M-o" 'dot/find-org
     "C-M-e" 'dot/go-to-dotemacs
+  )
+  ;; tab switching
+  (general-define-key
+    :states '(normal insert visual emacs)
+    "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+    "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+    "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+    "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
+    "C-M-t" 'dot/new-named-tab
   )
   (leaderkey
     "h" '(:ignore h :which-key "hydra commands")
