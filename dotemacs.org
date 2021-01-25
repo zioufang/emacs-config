@@ -106,6 +106,9 @@ install font =Cantarell=
 ;; hightlight current line
 (global-hl-line-mode t)
 
+;; clipboard history, shorter for cleaner counsel-yank-pop
+(setq kill-ring-max 5)
+
 ;; enable recentf
 (recentf-mode 1)
 (setq recentf-max-menu-items 25)
@@ -277,6 +280,14 @@ project-wide search and replace workflow:
         (make-frame)
         (delete-frame)))
 
+(defun dot/toggle-maximize-buffer () "Maximize buffer"
+  (interactive)
+  (if (= 1 (length (window-list)))
+      (jump-to-register '_)
+    (progn
+      (window-configuration-to-register '_)
+      (delete-other-windows))))
+
 (defun dot/split-dired-jump ()
     "Split left dired jump"
     (interactive)
@@ -304,7 +315,9 @@ project-wide search and replace workflow:
       "_" 'dot/split-dired-jump)
     ;; global mapping
     (general-define-key
-      "<f12>"   'dot/toggle-frame
+      :states '(normal insert visual emacs)
+      "<f12>"   'dot/toggle-maximize-buffer
+      "M-p"   'counsel-yank-pop     ;; clipboard history
       "C-s"   'swiper
       "C-M-r" 'counsel-recentf
       "C-M-p" 'dot/find-proj
@@ -834,8 +847,6 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 
 #+end_src
 * Todos
-- [ ] Stop dd/yy to sys clipboard (http://web.archive.org/web/20150313145313/http://www.codejury.com/bypassing-the-clipboard-in-emacs-evil-mode/ )
-  https://emacs.stackexchange.com/questions/14940/evil-mode-visual-selection-copies-text-to-clipboard-automatically/15054#15054
 - [ ] Ivy open in split (counsel-fzf & ace-window, embark?)
 - [ ] unify keybinding place
 - [ ] Bind key sequence like nmap

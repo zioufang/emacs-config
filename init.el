@@ -85,6 +85,9 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
+;; clipboard history, shorter for cleaner counsel-yank-pop
+(setq kill-ring-max 5)
+
 ;; enable recentf
 (recentf-mode 1)
 (setq recentf-max-menu-items 25)
@@ -236,6 +239,14 @@
         (make-frame)
         (delete-frame)))
 
+(defun dot/toggle-maximize-buffer () "Maximize buffer"
+  (interactive)
+  (if (= 1 (length (window-list)))
+      (jump-to-register '_)
+    (progn
+      (window-configuration-to-register '_)
+      (delete-other-windows))))
+
 (defun dot/split-dired-jump ()
     "Split left dired jump"
     (interactive)
@@ -261,7 +272,9 @@
     "_" 'dot/split-dired-jump)
   ;; global mapping
   (general-define-key
-    "<f12>"   'dot/toggle-frame
+    :states '(normal insert visual emacs)
+    "<f12>"   'dot/toggle-maximize-buffer
+    "M-p"   'counsel-yank-pop     ;; clipboard history
     "C-s"   'swiper
     "C-M-r" 'counsel-recentf
     "C-M-p" 'dot/find-proj
