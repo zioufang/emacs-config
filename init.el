@@ -567,6 +567,63 @@
     :prefix "C-c"
     "d" '(dap-hydra t :wk "debugger")))
 
+;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
+(use-package projectile
+  :diminish projectile-mode
+  :config
+  (projectile-mode)
+  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  (when (file-directory-p "~/projects")
+    (setq projectile-project-search-path '("~/projects")))
+  (setq projectile-switch-project-action #'projectile-dired)
+)
+;; better ivy/counsel integration with M-o
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+;; term emulator, needs CMAKE to compile
+
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(use-package forge)
+
+(use-package vterm
+:commands vterm
+:config (setq vterm-max-scrollback 10000))
+
+(use-package vterm-toggle
+:config
+(setq vterm-toggle-fullscreen-p nil)
+;; open vterm in dedicated bottom window
+(add-to-list 'display-buffer-alist
+             '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                ;; (display-buffer-reuse-window display-buffer-at-bottom)
+                (display-buffer-reuse-window display-buffer-in-direction)
+                ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                (direction . bottom)
+                (dedicated . t) ;dedicated is supported in emacs27
+                (reusable-frames . visible)
+                (window-height . 0.3)))
+)
+
+;; Make sure emacs use the proper ENV VAR
+(use-package exec-path-from-shell)
+;; disable auto load as it is slow
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+;; for daemon only
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
+;; rainbow delimiter
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
 ;; Built-in Python utilities
 (use-package python
   :custom
@@ -650,60 +707,3 @@
 (use-package terraform-mode)
 
 (use-package dockerfile-mode)
-
-;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
-(use-package projectile
-  :diminish projectile-mode
-  :config
-  (projectile-mode)
-  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap ("C-c p" . projectile-command-map)
-  :init
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-  (when (file-directory-p "~/projects")
-    (setq projectile-project-search-path '("~/projects")))
-  (setq projectile-switch-project-action #'projectile-dired)
-)
-;; better ivy/counsel integration with M-o
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
-;; term emulator, needs CMAKE to compile
-
-(use-package magit
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-
-(use-package forge)
-
-(use-package vterm
-:commands vterm
-:config (setq vterm-max-scrollback 10000))
-
-(use-package vterm-toggle
-:config
-(setq vterm-toggle-fullscreen-p nil)
-;; open vterm in dedicated bottom window
-(add-to-list 'display-buffer-alist
-             '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-                ;; (display-buffer-reuse-window display-buffer-at-bottom)
-                (display-buffer-reuse-window display-buffer-in-direction)
-                ;;display-buffer-in-direction/direction/dedicated is added in emacs27
-                (direction . bottom)
-                (dedicated . t) ;dedicated is supported in emacs27
-                (reusable-frames . visible)
-                (window-height . 0.3)))
-)
-
-;; Make sure emacs use the proper ENV VAR
-(use-package exec-path-from-shell)
-;; disable auto load as it is slow
-(when (memq window-system '(mac ns x))
-  (exec-path-from-shell-initialize))
-;; for daemon only
-(when (daemonp)
-  (exec-path-from-shell-initialize))
-
-;; rainbow delimiter
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
