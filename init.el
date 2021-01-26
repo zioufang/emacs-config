@@ -102,7 +102,12 @@
 
 (setq tab-bar-new-tab-to `rightmost
       tab-bar-show t
+      tab-bar-new-tab-choice "~/projects"
 )
+
+;; Get the current tab name for use in some other display when tab-bar-show = nil
+(defun dot/current-tab-name ()
+  (alist-get 'name (tab-bar--current-tab)))
 
 (use-package dired
   :ensure nil
@@ -159,7 +164,10 @@
   :config
   (setq ivy-initial-inputs-alist nil)    ;; remove ^
   (setq ivy-extra-directories nil) ;; remove ./.. from dir
+  (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
   (ivy-mode 1))
+
+;; single tab completion
 
 (use-package counsel
   :bind (("M-x" . counsel-M-x)
@@ -223,11 +231,6 @@
     (interactive)
     (counsel-find-file "~/projects/org"))
 
-(defun dot/find-proj ()
-    "Open Project Dir"
-    (interactive)
-    (counsel-find-file "~/projects"))
-
 (defun dot/go-to-dotemacs ()
     "Go To Emacs Config File"
     (interactive)
@@ -264,13 +267,35 @@
     (tab-bar-new-tab)
     (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
+(use-package hydra)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale font size"
+  ("k" text-scale-increase "increase")
+  ("j" text-scale-decrease "decrease")
+  ("q" nil "quit" :exit t))
+
 (use-package general
   :config
-  (general-create-definer leaderkey
-    :keymaps '(normal insert visual emacs)
+  ;; leader key overrides in all modes (e.g. dired)
+  (general-override-mode)
+  (general-define-key
+    :states '(normal emacs)
+    :keymaps 'override
     :prefix "SPC"
     :non-normal-prefix "M-SPC"
-  )
+    "h" '(:ignore h :which-key "hydra commands")
+    "t" '(vterm-toggle :which-key "toggle vterm")
+    "p" '(counsel-projectile-switch-project :which-key "switch project")
+    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+    "B" '(ivy-switch-buffer :which-key "switch buffer")
+    "f" '(counsel-projectile-find-file :which-key "project find file")
+    "F" '(counsel-find-file :which-key "find file")
+    "r" '(counsel-projectile-rg :which-key "project ripgrep")
+    "SPC" '(magit-status :which-key "magit status")
+    ;; hydra
+    "hf" '(hydra-text-scale/body :which-key "scale font size")
+    )
   ;; evil mapping
   (general-evil-setup)
   (general-nmap
@@ -287,7 +312,6 @@
     "M-p"   'counsel-yank-pop     ;; clipboard history
     "C-s"   'swiper
     "C-M-r" 'counsel-recentf
-    "C-M-p" 'dot/find-proj
     "C-M-o" 'dot/find-org
     "C-M-e" 'dot/go-to-dotemacs
   )
@@ -300,34 +324,12 @@
     "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
     "C-M-t" 'dot/new-named-tab
   )
-  (leaderkey
-    "h" '(:ignore h :which-key "hydra commands")
-    "t" '(vterm-toggle :which-key "toggle vterm")
-    "p" '(counsel-projectile-switch-project :which-key "switch project")
-    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-    "B" '(ivy-switch-buffer :which-key "switch buffer")
-    "f" '(counsel-projectile-find-file :which-key "project find file")
-    "F" '(counsel-find-file :which-key "find file")
-    "r" '(counsel-projectile-rg :which-key "project ripgrep")
-    "SPC" '(magit-status :which-key "magit status")
-    )
   ;; dired-mode workarounds
   ;; (general-define-key
   ;;   :states 'normal
   ;;   :keymaps 'dired-mode-map
   ;; )
 )
-
-(use-package hydra)
-
-(defhydra hydra-text-scale (:timeout 4)
-  "scale font size"
-  ("k" text-scale-increase "increase")
-  ("j" text-scale-decrease "decrease")
-  ("q" nil "quit" :exit t))
-
-(leaderkey
-  "hf" '(hydra-text-scale/body :which-key "scale font size"))
 
 (defun dot/org-mode-setup ()
   (org-indent-mode)
@@ -410,12 +412,15 @@
   '((emacs-lisp . t)
     (python . t)
     (go . t)
+    (ein . t)
     ))
 (setq org-confirm-babel-evaluate nil)
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
+(add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
+"))
 (add-to-list 'org-structure-template-alist '("go" . "src go"))
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 
@@ -712,7 +717,10 @@
   :after python
   :custom (blacken-line-length 119))
 
-(add-hook 'before-save-hook 'blacken-buffer)
+;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
+(add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+
+(use-package ein)
 
 (defun dot/lsp-go-before-save-hooks ()
   (add-hook 'before-save-hook #'lsp-format-buffer t t)
