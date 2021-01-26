@@ -251,118 +251,6 @@
 
 (use-package command-log-mode)
 
-;; TODO make them one func with folder path
-(defun dot/find-org ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects/org"))
-
-(defun dot/go-to-dotemacs ()
-    "Go To Emacs Config File"
-    (interactive)
-    (find-file "~/projects/emacs-config/dotemacs.org"))
-
-(defun dot/toggle-frame ()
-    "
-    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-    "
-    (interactive)
-    (if (eq (length (visible-frame-list)) 1)
-        (make-frame)
-        (delete-frame)))
-
-(defun dot/toggle-maximize-buffer () "Maximize buffer"
-  (interactive)
-  (if (= 1 (length (window-list)))
-      (jump-to-register '_)
-    (progn
-      (window-configuration-to-register '_)
-      (delete-other-windows))))
-
-(defun dot/split-dired-jump ()
-    "Split left dired jump"
-    (interactive)
-    (split-window-right)
-    (evil-window-right 1)
-    (dired-jump))
-
-(defun dot/kill-other-buffers ()
-  "Kill all other buffers."
-  (interactive)
-  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
-
-(defun dot/new-named-tab (name)
-    "Create a new tab with name inputs, prefixed by its index"
-    (interactive "MNew Tab Name: ")
-    (tab-bar-new-tab)
-    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
-
-(use-package hydra)
-
-(defhydra hydra-text-scale (:timeout 4)
-  "scale font size"
-  ("k" text-scale-increase "increase")
-  ("j" text-scale-decrease "decrease")
-  ("q" nil "quit" :exit t))
-
-(use-package general
-  :config
-  ;; leader key overrides for all modes (e.g. dired) in normal state
-  (general-override-mode)
-  (general-define-key
-    :states '(normal emacs)
-    :keymaps 'override
-    :prefix "SPC"
-    :non-normal-prefix "M-SPC"
-    "h" '(:ignore h :which-key "hydra commands")
-    "t" '(vterm-toggle :which-key "toggle vterm")
-    "p" '(counsel-projectile-switch-project :which-key "switch project")
-    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-    "B" '(ivy-switch-buffer :which-key "switch buffer")
-    "f" '(counsel-projectile-find-file :which-key "project find file")
-    "F" '(counsel-find-file :which-key "find file")
-    "r" '(counsel-projectile-rg :which-key "project ripgrep")
-    "q" '(delete-window :which-key "close window")
-    "SPC" '(magit-status :which-key "magit status")
-    ;; hydra
-    "hf" '(hydra-text-scale/body :which-key "scale font size")
-    )
-  ;; evil normal mapping
-  (general-evil-setup)
-  (general-nmap
-    "C-k" 'evil-window-up
-    "C-j" 'evil-window-down
-    "C-h" 'evil-window-left
-    "C-l" 'evil-window-right
-    "-" 'dired-jump
-    "_" 'dot/split-dired-jump)
-  ;; global mapping for normal + insert state
-  (general-define-key
-    :states '(normal insert visual emacs)
-    "<f12>"   'dot/toggle-maximize-buffer
-    "M-p"   'counsel-yank-pop     ;; clipboard history
-    "C-s"   'swiper
-    "C-M-r" 'counsel-recentf
-    "C-M-o" 'dot/find-org
-    "C-M-e" 'dot/go-to-dotemacs
-  )
-  ;; tab switching
-  (general-define-key
-    :states '(normal insert visual emacs)
-    "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-    "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-    "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-    "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-    "C-M-t" 'dot/new-named-tab
-  )
-  ;; dired-mode workarounds
-  ;; (general-define-key
-  ;;   :states 'normal
-  ;;   :keymaps 'dired-mode-map
-  ;; )
-)
-
 (defun dot/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -413,14 +301,9 @@
   :config
   (setq org-ellipsis " ▾")
   (dot/org-font-setup)
-  ;; keybindings
   ;; remove C-j/k for org-forward/backward-heading-same-level
-  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
-  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
-  ;; moving up one element
-  (define-key org-mode-map (kbd "<normal-state> K") 'org-up-element)
-  ;; toggle emphasis
-  (define-key org-mode-map (kbd "C-c e") 'org-toggle-emphasis)
+  ;; (define-key org-mode-map (kbd "<normal-state> C-j") nil)
+  ;; (define-key org-mode-map (kbd "<normal-state> C-k") nil)
   )
 
 (use-package org-bullets
@@ -766,3 +649,122 @@
 (use-package terraform-mode)
 
 (use-package dockerfile-mode)
+
+;; TODO make them one func with folder path
+(defun dot/find-org ()
+    "Open Org Dir"
+    (interactive)
+    (counsel-find-file "~/projects/org"))
+
+(defun dot/go-to-dotemacs ()
+    "Go To Emacs Config File"
+    (interactive)
+    (find-file "~/projects/emacs-config/dotemacs.org"))
+
+(defun dot/toggle-frame ()
+    "
+    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+    "
+    (interactive)
+    (if (eq (length (visible-frame-list)) 1)
+        (make-frame)
+        (delete-frame)))
+
+(defun dot/toggle-maximize-buffer () "Maximize buffer"
+  (interactive)
+  (if (= 1 (length (window-list)))
+      (jump-to-register '_)
+    (progn
+      (window-configuration-to-register '_)
+      (delete-other-windows))))
+
+(defun dot/split-dired-jump ()
+    "Split left dired jump"
+    (interactive)
+    (split-window-right)
+    (evil-window-right 1)
+    (dired-jump))
+
+(defun dot/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
+(defun dot/new-named-tab (name)
+    "Create a new tab with name inputs, prefixed by its index"
+    (interactive "MNew Tab Name: ")
+    (tab-bar-new-tab)
+    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+
+(use-package hydra)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale font size"
+  ("k" text-scale-increase "increase")
+  ("j" text-scale-decrease "decrease")
+  ("q" nil "quit" :exit t))
+
+(use-package general
+  :config
+  ;; leader key overrides for all modes (e.g. dired) in normal state
+  (general-override-mode)
+  (general-define-key
+    :states '(normal emacs)
+    :keymaps 'override
+    :prefix "SPC"
+    :non-normal-prefix "M-SPC"
+    "h" '(:ignore h :which-key "hydra commands")
+    "t" '(vterm-toggle :which-key "toggle vterm")
+    "p" '(counsel-projectile-switch-project :which-key "switch project")
+    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+    "B" '(ivy-switch-buffer :which-key "switch buffer")
+    "f" '(counsel-projectile-find-file :which-key "project find file")
+    "F" '(counsel-find-file :which-key "find file")
+    "r" '(counsel-projectile-rg :which-key "project ripgrep")
+    "q" '(delete-window :which-key "close window")
+    "SPC" '(magit-status :which-key "magit status")
+    ;; hydra
+    "hf" '(hydra-text-scale/body :which-key "scale font size")
+    )
+  ;; non leader key overrides
+  (general-define-key
+    :states '(normal emacs)
+    :keymaps 'override
+    "C-k" 'evil-window-up
+    "C-j" 'evil-window-down
+    "C-h" 'evil-window-left
+    "C-l" 'evil-window-right
+    "C-M-r" 'counsel-recentf
+    "C-M-o" 'dot/find-org
+    "C-M-e" 'dot/go-to-dotemacs
+    "<f12>"   'dot/toggle-maximize-buffer
+  )
+  ;; evil normal mapping
+  (general-evil-setup)
+  (general-nmap
+    "-" 'dired-jump
+    "_" 'dot/split-dired-jump)
+  ;; non-override global mapping for normal + insert state
+  (general-define-key
+    :states '(normal insert visual emacs)
+    "M-p"   'counsel-yank-pop     ;; clipboard history
+    "C-s"   'swiper
+  )
+  ;; tab switching
+  (general-define-key
+    :states '(normal insert visual emacs)
+    "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+    "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+    "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+    "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
+    "C-M-t" 'dot/new-named-tab
+  )
+  ;; org-mod
+  (general-define-key
+    :states 'normal
+    :keymaps 'org-mode-map
+    "K" 'org-up-element
+    "C-c e" 'org-toggle-emphasis
+  )
+)

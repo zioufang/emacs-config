@@ -303,208 +303,80 @@ project-wide search and replace workflow:
 (use-package command-log-mode)
 #+end_src
 
-* Keybindings
-useful default keybindings:
-- =C-x C-f= to find file or create new file
-- =C-x k= kill auffer
-** Helper Functions
-#+begin_src emacs-lisp
-  ;; TODO make them one func with folder path
-  (defun dot/find-org ()
-      "Open Org Dir"
-      (interactive)
-      (counsel-find-file "~/projects/org"))
-
-  (defun dot/go-to-dotemacs ()
-      "Go To Emacs Config File"
-      (interactive)
-      (find-file "~/projects/emacs-config/dotemacs.org"))
-
-  (defun dot/toggle-frame ()
-      "
-      Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-      Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-      "
-      (interactive)
-      (if (eq (length (visible-frame-list)) 1)
-          (make-frame)
-          (delete-frame)))
-
-  (defun dot/toggle-maximize-buffer () "Maximize buffer"
-    (interactive)
-    (if (= 1 (length (window-list)))
-        (jump-to-register '_)
-      (progn
-        (window-configuration-to-register '_)
-        (delete-other-windows))))
-
-  (defun dot/split-dired-jump ()
-      "Split left dired jump"
-      (interactive)
-      (split-window-right)
-      (evil-window-right 1)
-      (dired-jump))
-
-  (defun dot/kill-other-buffers ()
-    "Kill all other buffers."
-    (interactive)
-    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
-
-  (defun dot/new-named-tab (name)
-      "Create a new tab with name inputs, prefixed by its index"
-      (interactive "MNew Tab Name: ")
-      (tab-bar-new-tab)
-      (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
-
-#+end_src
-** Hydra
-#+begin_src emacs-lisp
-(use-package hydra)
-
-(defhydra hydra-text-scale (:timeout 4)
-  "scale font size"
-  ("k" text-scale-increase "increase")
-  ("j" text-scale-decrease "decrease")
-  ("q" nil "quit" :exit t))
-#+end_src
-** General
-#+begin_src emacs-lisp
-  (use-package general
-    :config
-    ;; leader key overrides for all modes (e.g. dired) in normal state
-    (general-override-mode)
-    (general-define-key
-      :states '(normal emacs)
-      :keymaps 'override
-      :prefix "SPC"
-      :non-normal-prefix "M-SPC"
-      "h" '(:ignore h :which-key "hydra commands")
-      "t" '(vterm-toggle :which-key "toggle vterm")
-      "p" '(counsel-projectile-switch-project :which-key "switch project")
-      "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-      "B" '(ivy-switch-buffer :which-key "switch buffer")
-      "f" '(counsel-projectile-find-file :which-key "project find file")
-      "F" '(counsel-find-file :which-key "find file")
-      "r" '(counsel-projectile-rg :which-key "project ripgrep")
-      "q" '(delete-window :which-key "close window")
-      "SPC" '(magit-status :which-key "magit status")
-      ;; hydra
-      "hf" '(hydra-text-scale/body :which-key "scale font size")
-      )
-    ;; evil normal mapping
-    (general-evil-setup)
-    (general-nmap
-      "C-k" 'evil-window-up
-      "C-j" 'evil-window-down
-      "C-h" 'evil-window-left
-      "C-l" 'evil-window-right
-      "-" 'dired-jump
-      "_" 'dot/split-dired-jump)
-    ;; global mapping for normal + insert state
-    (general-define-key
-      :states '(normal insert visual emacs)
-      "<f12>"   'dot/toggle-maximize-buffer
-      "M-p"   'counsel-yank-pop     ;; clipboard history
-      "C-s"   'swiper
-      "C-M-r" 'counsel-recentf
-      "C-M-o" 'dot/find-org
-      "C-M-e" 'dot/go-to-dotemacs
-    )
-    ;; tab switching
-    (general-define-key
-      :states '(normal insert visual emacs)
-      "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-      "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-      "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-      "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-      "C-M-t" 'dot/new-named-tab
-    )
-    ;; dired-mode workarounds
-    ;; (general-define-key
-    ;;   :states 'normal
-    ;;   :keymaps 'dired-mode-map
-    ;; )
-  )
-#+end_src
 * Org Mode
 =Shift-Tab= to toggle headings for the whole doc
 ** Look & Feel
 list emacs colour name with =list-colors-display=
 #+begin_src emacs-lisp
-(defun dot/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (set-variable 'org-hide-emphasis-markers t)
-  (visual-line-mode 1))
+  (defun dot/org-mode-setup ()
+    (org-indent-mode)
+    (variable-pitch-mode 1)
+    (set-variable 'org-hide-emphasis-markers t)
+    (visual-line-mode 1))
 
-(defun dot/org-font-setup ()
-  ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
- ;; Set faces for heading levels
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
+  (defun dot/org-font-setup ()
+    ;; Replace list hyphen with dot
+    (font-lock-add-keywords 'org-mode
+                            '(("^ *\\([-]\\) "
+                               (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+   ;; Set faces for heading levels
+    (dolist (face '((org-level-1 . 1.2)
+                    (org-level-2 . 1.1)
+                    (org-level-3 . 1.05)
+                    (org-level-4 . 1.0)
+                    (org-level-5 . 1.1)
+                    (org-level-6 . 1.1)
+                    (org-level-7 . 1.1)
+                    (org-level-8 . 1.1)))
+      (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
 
-  (custom-theme-set-faces 'user
-                        `(org-level-3 ((t (:foreground "sky blue")))))
+    (custom-theme-set-faces 'user
+                          `(org-level-3 ((t (:foreground "sky blue")))))
 
-  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
-(defun org-toggle-emphasis ()
-  "Toggle hiding/showing of org emphasize markers."
-  (interactive)
-  (if org-hide-emphasis-markers
-      (set-variable 'org-hide-emphasis-markers nil)
-    (set-variable 'org-hide-emphasis-markers t))
-  )
+  (defun org-toggle-emphasis ()
+    "Toggle hiding/showing of org emphasize markers."
+    (interactive)
+    (if org-hide-emphasis-markers
+        (set-variable 'org-hide-emphasis-markers nil)
+      (set-variable 'org-hide-emphasis-markers t))
+    )
 
-(setq org-todo-keywords
-  '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
+  (setq org-todo-keywords
+    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
 
-(use-package org
-  :hook (org-mode . dot/org-mode-setup)
-  :config
-  (setq org-ellipsis " ▾")
-  (dot/org-font-setup)
-  ;; keybindings
-  ;; remove C-j/k for org-forward/backward-heading-same-level
-  (define-key org-mode-map (kbd "<normal-state> C-j") nil)
-  (define-key org-mode-map (kbd "<normal-state> C-k") nil)
-  ;; moving up one element
-  (define-key org-mode-map (kbd "<normal-state> K") 'org-up-element)
-  ;; toggle emphasis
-  (define-key org-mode-map (kbd "C-c e") 'org-toggle-emphasis)
-  )
+  (use-package org
+    :hook (org-mode . dot/org-mode-setup)
+    :config
+    (setq org-ellipsis " ▾")
+    (dot/org-font-setup)
+    ;; remove C-j/k for org-forward/backward-heading-same-level
+    ;; (define-key org-mode-map (kbd "<normal-state> C-j") nil)
+    ;; (define-key org-mode-map (kbd "<normal-state> C-k") nil)
+    )
 
-(use-package org-bullets
-  :after org
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (use-package org-bullets
+    :after org
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-(defun dot/org-mode-visual-fill ()
-  (setq visual-fill-column-width 100
-        visual-fill-column-center-text t)
-  (visual-fill-column-mode 1))
+  (defun dot/org-mode-visual-fill ()
+    (setq visual-fill-column-width 100
+          visual-fill-column-center-text t)
+    (visual-fill-column-mode 1))
 
-(use-package visual-fill-column
-  :after org
-  :hook (org-mode . dot/org-mode-visual-fill))
+  (use-package visual-fill-column
+    :after org
+    :hook (org-mode . dot/org-mode-visual-fill))
 #+end_src
 ** Babel
 #+begin_src emacs-lisp
@@ -938,9 +810,137 @@ install =gopls= and =godef= first
 #+begin_src emacs-lisp
 (use-package dockerfile-mode)
 #+end_src
+* Keybindings
+useful default keybindings:
+- =C-x C-f= to find file or create new file
+- =C-x k= kill auffer
+** Helper Functions
+#+begin_src emacs-lisp
+  ;; TODO make them one func with folder path
+  (defun dot/find-org ()
+      "Open Org Dir"
+      (interactive)
+      (counsel-find-file "~/projects/org"))
+
+  (defun dot/go-to-dotemacs ()
+      "Go To Emacs Config File"
+      (interactive)
+      (find-file "~/projects/emacs-config/dotemacs.org"))
+
+  (defun dot/toggle-frame ()
+      "
+      Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+      Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+      "
+      (interactive)
+      (if (eq (length (visible-frame-list)) 1)
+          (make-frame)
+          (delete-frame)))
+
+  (defun dot/toggle-maximize-buffer () "Maximize buffer"
+    (interactive)
+    (if (= 1 (length (window-list)))
+        (jump-to-register '_)
+      (progn
+        (window-configuration-to-register '_)
+        (delete-other-windows))))
+
+  (defun dot/split-dired-jump ()
+      "Split left dired jump"
+      (interactive)
+      (split-window-right)
+      (evil-window-right 1)
+      (dired-jump))
+
+  (defun dot/kill-other-buffers ()
+    "Kill all other buffers."
+    (interactive)
+    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
+  (defun dot/new-named-tab (name)
+      "Create a new tab with name inputs, prefixed by its index"
+      (interactive "MNew Tab Name: ")
+      (tab-bar-new-tab)
+      (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+
+#+end_src
+** Hydra
+#+begin_src emacs-lisp
+(use-package hydra)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale font size"
+  ("k" text-scale-increase "increase")
+  ("j" text-scale-decrease "decrease")
+  ("q" nil "quit" :exit t))
+#+end_src
+** General
+#+begin_src emacs-lisp
+  (use-package general
+    :config
+    ;; leader key overrides for all modes (e.g. dired) in normal state
+    (general-override-mode)
+    (general-define-key
+      :states '(normal emacs)
+      :keymaps 'override
+      :prefix "SPC"
+      :non-normal-prefix "M-SPC"
+      "h" '(:ignore h :which-key "hydra commands")
+      "t" '(vterm-toggle :which-key "toggle vterm")
+      "p" '(counsel-projectile-switch-project :which-key "switch project")
+      "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+      "B" '(ivy-switch-buffer :which-key "switch buffer")
+      "f" '(counsel-projectile-find-file :which-key "project find file")
+      "F" '(counsel-find-file :which-key "find file")
+      "r" '(counsel-projectile-rg :which-key "project ripgrep")
+      "q" '(delete-window :which-key "close window")
+      "SPC" '(magit-status :which-key "magit status")
+      ;; hydra
+      "hf" '(hydra-text-scale/body :which-key "scale font size")
+      )
+    ;; non leader key overrides
+    (general-define-key
+      :states '(normal emacs)
+      :keymaps 'override
+      "C-k" 'evil-window-up
+      "C-j" 'evil-window-down
+      "C-h" 'evil-window-left
+      "C-l" 'evil-window-right
+      "C-M-r" 'counsel-recentf
+      "C-M-o" 'dot/find-org
+      "C-M-e" 'dot/go-to-dotemacs
+      "<f12>"   'dot/toggle-maximize-buffer
+    )
+    ;; evil normal mapping
+    (general-evil-setup)
+    (general-nmap
+      "-" 'dired-jump
+      "_" 'dot/split-dired-jump)
+    ;; non-override global mapping for normal + insert state
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "M-p"   'counsel-yank-pop     ;; clipboard history
+      "C-s"   'swiper
+    )
+    ;; tab switching
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+      "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+      "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+      "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
+      "C-M-t" 'dot/new-named-tab
+    )
+    ;; org-mod
+    (general-define-key
+      :states 'normal
+      :keymaps 'org-mode-map
+      "K" 'org-up-element
+      "C-c e" 'org-toggle-emphasis
+    )
+  )
+#+end_src
 * Todos
-- [ ] Ivy open in split (counsel-fzf & ace-window, embark?)
-- [ ] unify keybinding place
 - [ ] Bind key sequence like nmap
 - [ ] auto insert python google style docstring: https://emacs.stackexchange.com/questions/19422/library-for-automatically-inserting-python-docstring-in-google-style
 - [ ] Setup snippet
