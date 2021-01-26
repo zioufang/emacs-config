@@ -194,54 +194,78 @@ project-wide search and replace workflow:
 - =C-c C-o= brings the searches to a =ivy-occur= window
 - TODO use =wgrep= to multi edit the 'occur' window
 #+begin_src emacs-lisp
-(use-package ivy
-  :diminish
-  :bind (
-         :map ivy-minibuffer-map
-         ("C-l" . ivy-alt-done)
-         ("C-j" . ivy-next-line)
-         ("C-k" . ivy-previous-line)
-         :map ivy-switch-buffer-map
-         ("C-k" . ivy-previous-line)
-         ("C-l" . ivy-done)
-         ("C-d" . ivy-switch-buffer-kill)
-         :map ivy-reverse-i-search-map
-         ("C-k" . ivy-previous-line)
-         ("C-d" . ivy-reverse-i-search-kill))
-  :config
-  (setq ivy-initial-inputs-alist nil)    ;; remove ^
-  (setq ivy-extra-directories nil) ;; remove ./.. from dir
-  (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
-  (ivy-mode 1))
+  (defun dot/find-file-right (filename)
+    (interactive)
+    (split-window-right)
+    (other-window 1)
+    (balance-windows)
+    (find-file filename))
+  (defun dot/find-file-below (filename)
+    (interactive)
+    (split-window-below)
+    (other-window 1)
+    (balance-windows)
+    (find-file filename))
+  (defun dot/set-ivy-action-split-find-file (ivy-func)
+    (ivy-set-actions
+      ivy-func
+      '(("v" dot/find-file-right "open right")
+      ("s" dot/find-file-below "open below")))
+  )
+  (use-package ivy
+    :diminish
+    :bind (
+           :map ivy-minibuffer-map
+           ("C-j" . ivy-next-line)
+           ("C-k" . ivy-previous-line)
+           :map ivy-switch-buffer-map
+           ("C-k" . ivy-previous-line)
+           ("C-d" . ivy-switch-buffer-kill)
+           :map ivy-reverse-i-search-map
+           ("C-k" . ivy-previous-line)
+           ("C-r" . ivy-reverse-i-search-kill))
+    :config
+    (setq ivy-initial-inputs-alist nil)    ;; remove ^
+    (setq ivy-extra-directories nil) ;; remove ./.. from dir
+    (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done) ;; single tab completion (was double)
+    (dolist (ivy-func
+    '(ivy-switch-buffer
+      counsel-find-file
+      counsel-recentf
+      counsel-projectile-find-file
+      counsel-projectile-switch-to-buffer))
+    (dot/set-ivy-action-split-find-file ivy-func))
+    (ivy-mode 1))
 
-;; single tab completion
 
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
+  ;; single tab completion
 
-(use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
+  (use-package counsel
+    :bind (("M-x" . counsel-M-x)
+           :map minibuffer-local-map
+           ("C-r" . 'counsel-minibuffer-history)))
 
-(use-package ivy-prescient
-  :after counsel
-  :config
-  (ivy-prescient-mode 1)
-  (prescient-persist-mode 1)
-  (setq prescient-sort-length-enable nil))
+  (use-package ivy-rich
+    :init
+    (ivy-rich-mode 1))
 
-;; better help for counsel
-(use-package helpful
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+  (use-package ivy-prescient
+    :after counsel
+    :config
+    (ivy-prescient-mode 1)
+    (prescient-persist-mode 1)
+    (setq prescient-sort-length-enable nil))
+
+  ;; better help for counsel
+  (use-package helpful
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key))
 #+end_src
 ** Theme
 #+begin_src emacs-lisp
@@ -314,17 +338,17 @@ useful default keybindings:
         (window-configuration-to-register '_)
         (delete-other-windows))))
 
-  (defun dot/kill-other-buffers ()
-    "Kill all other buffers."
-    (interactive)
-    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
-
   (defun dot/split-dired-jump ()
       "Split left dired jump"
       (interactive)
       (split-window-right)
       (evil-window-right 1)
       (dired-jump))
+
+  (defun dot/kill-other-buffers ()
+    "Kill all other buffers."
+    (interactive)
+    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
   (defun dot/new-named-tab (name)
       "Create a new tab with name inputs, prefixed by its index"
@@ -813,7 +837,6 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package yaml-mode)
 #+end_src
 * Languages
 ** Python

@@ -149,25 +149,49 @@
   (evil-collection-define-key 'normal 'dired-mode-map
     "gh" 'dired-hide-dotfiles-mode))
 
+(defun dot/find-file-right (filename)
+  (interactive)
+  (split-window-right)
+  (other-window 1)
+  (balance-windows)
+  (find-file filename))
+(defun dot/find-file-below (filename)
+  (interactive)
+  (split-window-below)
+  (other-window 1)
+  (balance-windows)
+  (find-file filename))
+(defun dot/set-ivy-action-split-find-file (ivy-func)
+  (ivy-set-actions
+    ivy-func
+    '(("v" dot/find-file-right "open right")
+    ("s" dot/find-file-below "open below")))
+)
 (use-package ivy
   :diminish
   :bind (
          :map ivy-minibuffer-map
-         ("C-l" . ivy-alt-done)
          ("C-j" . ivy-next-line)
          ("C-k" . ivy-previous-line)
          :map ivy-switch-buffer-map
          ("C-k" . ivy-previous-line)
-         ("C-l" . ivy-done)
          ("C-d" . ivy-switch-buffer-kill)
          :map ivy-reverse-i-search-map
          ("C-k" . ivy-previous-line)
-         ("C-d" . ivy-reverse-i-search-kill))
+         ("C-r" . ivy-reverse-i-search-kill))
   :config
   (setq ivy-initial-inputs-alist nil)    ;; remove ^
   (setq ivy-extra-directories nil) ;; remove ./.. from dir
-  (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done)
+  (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done) ;; single tab completion (was double)
+  (dolist (ivy-func
+  '(ivy-switch-buffer
+    counsel-find-file
+    counsel-recentf
+    counsel-projectile-find-file
+    counsel-projectile-switch-to-buffer))
+  (dot/set-ivy-action-split-find-file ivy-func))
   (ivy-mode 1))
+
 
 ;; single tab completion
 
@@ -256,17 +280,17 @@
       (window-configuration-to-register '_)
       (delete-other-windows))))
 
-(defun dot/kill-other-buffers ()
-  "Kill all other buffers."
-  (interactive)
-  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
-
 (defun dot/split-dired-jump ()
     "Split left dired jump"
     (interactive)
     (split-window-right)
     (evil-window-right 1)
     (dired-jump))
+
+(defun dot/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
 (defun dot/new-named-tab (name)
     "Create a new tab with name inputs, prefixed by its index"
@@ -655,8 +679,6 @@
 ;; rainbow delimiter
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
-
-(use-package yaml-mode)
 
 ;; Built-in Python utilities
 (use-package python
