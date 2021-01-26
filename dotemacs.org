@@ -141,6 +141,12 @@ install font =Cantarell=
 #+end_src
 ** Dired
 on Mac, install gnu =ls= first e.g. =brew install coreutils=
+- mark file: =m=
+- unmark file/all file: =u/U=
+- delete file: =D=
+- copy: =C=
+- rename/move: =R=, press =M-n= (next-history-element) to get the current filename to the minibuffer
+- change file mode: =M=
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
@@ -149,9 +155,11 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
+  (setq dired-dwim-target t)
   ;; not use macos ls
   (when (equal system-type 'darwin)
     (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
+
 
 (use-package dired-single)
 (defun dot/dired-init ()
@@ -306,6 +314,11 @@ useful default keybindings:
         (window-configuration-to-register '_)
         (delete-other-windows))))
 
+  (defun dot/kill-other-buffers ()
+    "Kill all other buffers."
+    (interactive)
+    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
   (defun dot/split-dired-jump ()
       "Split left dired jump"
       (interactive)
@@ -334,7 +347,7 @@ useful default keybindings:
 #+begin_src emacs-lisp
   (use-package general
     :config
-    ;; leader key overrides in all modes (e.g. dired)
+    ;; leader key overrides for all modes (e.g. dired) in normal state
     (general-override-mode)
     (general-define-key
       :states '(normal emacs)
@@ -349,11 +362,12 @@ useful default keybindings:
       "f" '(counsel-projectile-find-file :which-key "project find file")
       "F" '(counsel-find-file :which-key "find file")
       "r" '(counsel-projectile-rg :which-key "project ripgrep")
+      "q" '(delete-window :which-key "close window")
       "SPC" '(magit-status :which-key "magit status")
       ;; hydra
       "hf" '(hydra-text-scale/body :which-key "scale font size")
       )
-    ;; evil mapping
+    ;; evil normal mapping
     (general-evil-setup)
     (general-nmap
       "C-k" 'evil-window-up
@@ -362,7 +376,7 @@ useful default keybindings:
       "C-l" 'evil-window-right
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
-    ;; global mapping
+    ;; global mapping for normal + insert state
     (general-define-key
       :states '(normal insert visual emacs)
       "<f12>"   'dot/toggle-maximize-buffer
@@ -799,6 +813,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
+(use-package yaml-mode)
 #+end_src
 * Languages
 ** Python

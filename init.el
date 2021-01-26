@@ -116,9 +116,11 @@
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
+  (setq dired-dwim-target t)
   ;; not use macos ls
   (when (equal system-type 'darwin)
     (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
+
 
 (use-package dired-single)
 (defun dot/dired-init ()
@@ -254,6 +256,11 @@
       (window-configuration-to-register '_)
       (delete-other-windows))))
 
+(defun dot/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
 (defun dot/split-dired-jump ()
     "Split left dired jump"
     (interactive)
@@ -277,7 +284,7 @@
 
 (use-package general
   :config
-  ;; leader key overrides in all modes (e.g. dired)
+  ;; leader key overrides for all modes (e.g. dired) in normal state
   (general-override-mode)
   (general-define-key
     :states '(normal emacs)
@@ -292,11 +299,12 @@
     "f" '(counsel-projectile-find-file :which-key "project find file")
     "F" '(counsel-find-file :which-key "find file")
     "r" '(counsel-projectile-rg :which-key "project ripgrep")
+    "q" '(delete-window :which-key "close window")
     "SPC" '(magit-status :which-key "magit status")
     ;; hydra
     "hf" '(hydra-text-scale/body :which-key "scale font size")
     )
-  ;; evil mapping
+  ;; evil normal mapping
   (general-evil-setup)
   (general-nmap
     "C-k" 'evil-window-up
@@ -305,7 +313,7 @@
     "C-l" 'evil-window-right
     "-" 'dired-jump
     "_" 'dot/split-dired-jump)
-  ;; global mapping
+  ;; global mapping for normal + insert state
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
@@ -647,6 +655,8 @@
 ;; rainbow delimiter
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package yaml-mode)
 
 ;; Built-in Python utilities
 (use-package python
