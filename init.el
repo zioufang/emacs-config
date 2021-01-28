@@ -162,7 +162,7 @@
   (balance-windows)
   (find-file filename))
 (defun dot/set-ivy-action-split-find-file (ivy-func)
-  (ivy-set-actions
+  (ivy-add-actions
     ivy-func
     '(("v" dot/find-file-right "open right")
     ("s" dot/find-file-below "open below")))
@@ -184,11 +184,7 @@
   (setq ivy-extra-directories nil) ;; remove ./.. from dir
   (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done) ;; single tab completion (was double)
   (dolist (ivy-func
-  '(ivy-switch-buffer
-    counsel-find-file
-    counsel-recentf
-    counsel-projectile-find-file
-    counsel-projectile-switch-to-buffer))
+  '(ivy-switch-buffer))
   (dot/set-ivy-action-split-find-file ivy-func))
   (ivy-mode 1))
 
@@ -196,9 +192,16 @@
 ;; single tab completion
 
 (use-package counsel
+  :after ivy
   :bind (("M-x" . counsel-M-x)
          :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
+         ("C-r" . 'counsel-minibuffer-history))
+  :config
+  (dolist (ivy-func
+  '(counsel-find-file
+    counsel-recentf))
+  (dot/set-ivy-action-split-find-file ivy-func)))
+
 
 (use-package ivy-rich
   :init
@@ -415,15 +418,15 @@
   :config
   (evil-commentary-mode))
 
-(use-package evil-snipe
-  :after evil
-  :init
-  (setq evil-snipe-scope 'visible)
-  (setq evil-snipe-repeat-scope 'whole-visible)
-  :config
-  (evil-snipe-mode)
-  (evil-snipe-override-mode)
-  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+;; (use-package evil-snipe
+;;   :after evil
+;;   :init
+;;   (setq evil-snipe-scope 'visible)
+;;   (setq evil-snipe-repeat-scope 'whole-visible)
+;;   :config
+;;   (evil-snipe-mode)
+;;   (evil-snipe-override-mode)
+;;   (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
 
 (use-package evil-surround
   :config
@@ -437,6 +440,8 @@
       undo-outer-limit 3000000)
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+
+(setq tramp-default-method "ssh")
 
 (use-package lsp-mode
   :defer t
@@ -469,24 +474,24 @@
 
 (use-package lsp-ivy)
 
-(defun dot/init-company-lsp ()
-  (setq-local company-backends (company-capf :with company-dabbrev-code :with company-yasnippet :with company-files)))
-
 ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
 (use-package company
   :after lsp-mode
-  :hook
-  (lsp-mode . dot/init-company-lsp)
+  ;; :hook
+  ;; (lsp-mode . dot/init-company-lsp)
+  :init
+  (setq company-backends '(company-capf))
   :bind (:map company-active-map
          ("<tab>" . company-complete-common-or-cycle))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
-  :init
-  (global-company-mode)
   :custom
-  (company-backends '(company-dabbrev-code))
+  ;; (company-backends '(company-capf :with company-yasnippet :with company-files))
   (company-minimum-prefix-length 2)
   (company-idle-delay 0.0))
+  :config
+  (global-company-mode)
+
 
 ;; icon + others pretty stuff
 (use-package company-box
@@ -522,7 +527,14 @@
 )
 ;; better ivy/counsel integration with M-o
 (use-package counsel-projectile
-  :config (counsel-projectile-mode))
+  :after ivy
+  :config
+    (dolist (ivy-func
+    '(counsel-projectile-find-file
+      counsel-projectile-switch-to-buffer))
+    (dot/set-ivy-action-split-find-file ivy-func))
+
+  (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 
 (use-package magit
@@ -550,14 +562,21 @@
                 (window-height . 0.3)))
 )
 
+(use-package yasnippet
+:config
+(setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
+(yas-global-mode 1))
+
+(use-package avy)
+
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell)
 ;; disable auto load as it is slow
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 ;; for daemon only
-(when (daemonp)
-  (exec-path-from-shell-initialize))
+;; (when (daemonp)
+;;   (exec-path-from-shell-initialize))
 
 ;; rainbow delimiter
 (use-package rainbow-delimiters
@@ -630,7 +649,7 @@
 
 (use-package blacken
   :after python
-  :custom (blacken-line-length 119))
+  :custom (blacken-line-length 99))
 
 ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
 (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
@@ -650,16 +669,10 @@
 
 (use-package dockerfile-mode)
 
-;; TODO make them one func with folder path
-(defun dot/find-org ()
-    "Open Org Dir"
-    (interactive)
-    (counsel-find-file "~/projects/org"))
-
 (defun dot/go-to-dotemacs ()
     "Go To Emacs Config File"
     (interactive)
-    (find-file "~/projects/emacs-config/dotemacs.org"))
+    (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
 
 (defun dot/toggle-frame ()
     "
@@ -706,65 +719,76 @@
   ("q" nil "quit" :exit t))
 
 (use-package general
-  :config
-  ;; leader key overrides for all modes (e.g. dired) in normal state
-  (general-override-mode)
-  (general-define-key
-    :states '(normal emacs)
-    :keymaps 'override
-    :prefix "SPC"
-    :non-normal-prefix "M-SPC"
-    "h" '(:ignore h :which-key "hydra commands")
-    "t" '(vterm-toggle :which-key "toggle vterm")
-    "p" '(counsel-projectile-switch-project :which-key "switch project")
-    "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-    "B" '(ivy-switch-buffer :which-key "switch buffer")
-    "f" '(counsel-projectile-find-file :which-key "project find file")
-    "F" '(counsel-find-file :which-key "find file")
-    "r" '(counsel-projectile-rg :which-key "project ripgrep")
-    "q" '(delete-window :which-key "close window")
-    "SPC" '(magit-status :which-key "magit status")
-    ;; hydra
-    "hf" '(hydra-text-scale/body :which-key "scale font size")
+    :config
+    ;; leader key overrides for all modes (e.g. dired) in normal state
+    (general-override-mode)
+    (general-define-key
+      :states '(normal emacs)
+      :keymaps 'override
+      :prefix "SPC"
+      :non-normal-prefix "M-SPC"
+      "h" '(:ignore h :which-key "hydra commands")
+      "t" '(vterm-toggle :which-key "toggle vterm")
+      "p" '(counsel-projectile-switch-project :which-key "switch project")
+      "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+      "B" '(ivy-switch-buffer :which-key "switch buffer")
+      "f" '(counsel-projectile-find-file :which-key "project find file")
+      "F" '(counsel-find-file :which-key "find file")
+      "r" '(counsel-projectile-rg :which-key "project ripgrep")
+      "SPC" '(magit-status :which-key "magit status")
+      ;; hydra
+      "hf" '(hydra-text-scale/body :which-key "scale font size")
+      )
+    ;; non leader key overrides
+    (general-define-key
+      :states '(normal emacs)
+      :keymaps 'override
+      "C-k" 'evil-window-up
+      "C-j" 'evil-window-down
+      "C-h" 'evil-window-left
+      "C-l" 'evil-window-right
+      "C-M-r" 'counsel-recentf
+      "C-M-o" (lambda () (interactive) (counsel-find-file "~/projects/org"))
+      "C-M-p" (lambda () (interactive) (counsel-find-file "~/projects"))
+      "C-M-e" (lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org"))
+      "<f12>"   'dot/toggle-maximize-buffer
+      "ZZ" '(delete-window :which-key "close window")
     )
-  ;; non leader key overrides
-  (general-define-key
-    :states '(normal emacs)
-    :keymaps 'override
-    "C-k" 'evil-window-up
-    "C-j" 'evil-window-down
-    "C-h" 'evil-window-left
-    "C-l" 'evil-window-right
-    "C-M-r" 'counsel-recentf
-    "C-M-o" 'dot/find-org
-    "C-M-e" 'dot/go-to-dotemacs
-    "<f12>"   'dot/toggle-maximize-buffer
-  )
-  ;; evil normal mapping
-  (general-evil-setup)
-  (general-nmap
-    "-" 'dired-jump
-    "_" 'dot/split-dired-jump)
-  ;; non-override global mapping for normal + insert state
-  (general-define-key
-    :states '(normal insert visual emacs)
-    "M-p"   'counsel-yank-pop     ;; clipboard history
-    "C-s"   'swiper
-  )
-  ;; tab switching
-  (general-define-key
-    :states '(normal insert visual emacs)
-    "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-    "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-    "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-    "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-    "C-M-t" 'dot/new-named-tab
-  )
-  ;; org-mod
-  (general-define-key
-    :states 'normal
-    :keymaps 'org-mode-map
-    "K" 'org-up-element
-    "C-c e" 'org-toggle-emphasis
-  )
+    ;; evil normal mapping
+    (general-evil-setup)
+    (general-nmap
+      "s" 'avy-goto-char-2
+      "S" 'avy-goto-line
+      "-" 'dired-jump
+      "_" 'dot/split-dired-jump)
+    ;; non-override global mapping for normal + insert state
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "M-p"   'counsel-yank-pop     ;; clipboard history
+      "C-s"   'swiper
+    )
+    ;; tab switching
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+      "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+      "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+      "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
+      "C-M-t" 'dot/new-named-tab
+    )
+    ;; org-mod
+    (general-define-key
+      :states 'normal
+      :keymaps 'org-mode-map
+      "K" 'org-up-element
+      "C-c e" 'org-toggle-emphasis
+    )
+    ;; yasnippet
+    ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
+    (general-define-key
+      :states '(insert)
+      :keymaps 'yas-minor-mode-map
+      "M-TAB" #'yas-expand
+      "SPC" yas-maybe-expand
+    )
 )

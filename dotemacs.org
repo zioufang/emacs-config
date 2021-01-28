@@ -1,5 +1,8 @@
 #+title: Dot Emacs
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el :mkdirp yes
+sym linking, for example:
+=ln -s ~/projects/emacs-config/init.el ~/.config/emacs/=
+* Basics
 =package-refresh-contents= to update package repos
 =describe-text-properties= to describe face at cursor point
 =apropos= to regex search all emacs symbol
@@ -8,8 +11,6 @@ debug errored out config:
 - =C-g= to get out of anything
 - =delete-window= to close window
 - =check-parens= for paren syntax error in elisp
-
-* Basics
 ** Startup Tricks
 #+begin_src emacs-lisp
 ;; doom emacs
@@ -207,7 +208,7 @@ project-wide search and replace workflow:
     (balance-windows)
     (find-file filename))
   (defun dot/set-ivy-action-split-find-file (ivy-func)
-    (ivy-set-actions
+    (ivy-add-actions
       ivy-func
       '(("v" dot/find-file-right "open right")
       ("s" dot/find-file-below "open below")))
@@ -229,11 +230,7 @@ project-wide search and replace workflow:
     (setq ivy-extra-directories nil) ;; remove ./.. from dir
     (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done) ;; single tab completion (was double)
     (dolist (ivy-func
-    '(ivy-switch-buffer
-      counsel-find-file
-      counsel-recentf
-      counsel-projectile-find-file
-      counsel-projectile-switch-to-buffer))
+    '(ivy-switch-buffer))
     (dot/set-ivy-action-split-find-file ivy-func))
     (ivy-mode 1))
 
@@ -241,9 +238,16 @@ project-wide search and replace workflow:
   ;; single tab completion
 
   (use-package counsel
+    :after ivy
     :bind (("M-x" . counsel-M-x)
            :map minibuffer-local-map
-           ("C-r" . 'counsel-minibuffer-history)))
+           ("C-r" . 'counsel-minibuffer-history))
+    :config
+    (dolist (ivy-func
+    '(counsel-find-file
+      counsel-recentf))
+    (dot/set-ivy-action-split-find-file ivy-func)))
+
 
   (use-package ivy-rich
     :init
@@ -492,54 +496,59 @@ func = <<the-func()>>
 * Dev
 ** Evil
 #+begin_src emacs-lisp
-(use-package evil
-  :init
-  (setq evil-want-C-u-scroll t)
-  (setq evil-want-keybinding nil)  ;; for evil-collection
-  :config
-  (evil-mode 1)
-  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-  (evil-set-initial-state 'messages-buffer-mode 'normal)
-  (evil-set-initial-state 'dashboard-mode 'normal)
-)
-;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
-;; define an ex kestroke to a func
-;; (eval-after-load 'evil-ex
-;;   '(evil-ex-define-cmd "bl" 'gud-break))
+  (use-package evil
+    :init
+    (setq evil-want-C-u-scroll t)
+    (setq evil-want-keybinding nil)  ;; for evil-collection
+    :config
+    (evil-mode 1)
+    (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+    (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+    (evil-set-initial-state 'messages-buffer-mode 'normal)
+    (evil-set-initial-state 'dashboard-mode 'normal)
+  )
+  ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
+  ;; define an ex kestroke to a func
+  ;; (eval-after-load 'evil-ex
+  ;;   '(evil-ex-define-cmd "bl" 'gud-break))
 
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
+  (use-package evil-collection
+    :after evil
+    :config
+    (evil-collection-init))
 
-(use-package evil-commentary
-  :after evil
-  :config
-  (evil-commentary-mode))
+  (use-package evil-commentary
+    :after evil
+    :config
+    (evil-commentary-mode))
 
-(use-package evil-snipe
-  :after evil
-  :init
-  (setq evil-snipe-scope 'visible)
-  (setq evil-snipe-repeat-scope 'whole-visible)
-  :config
-  (evil-snipe-mode)
-  (evil-snipe-override-mode)
-  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+  ;; (use-package evil-snipe
+  ;;   :after evil
+  ;;   :init
+  ;;   (setq evil-snipe-scope 'visible)
+  ;;   (setq evil-snipe-repeat-scope 'whole-visible)
+  ;;   :config
+  ;;   (evil-snipe-mode)
+  ;;   (evil-snipe-override-mode)
+  ;;   (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
 
-(use-package evil-surround
-  :config
-  (global-evil-surround-mode))
+  (use-package evil-surround
+    :config
+    (global-evil-surround-mode))
 
-(use-package undo-fu
-  :after evil
-  :config
-  (setq undo-limit 400000
-      undo-strong-limit 3000000
-      undo-outer-limit 3000000)
-  (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
-  (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+  (use-package undo-fu
+    :after evil
+    :config
+    (setq undo-limit 400000
+        undo-strong-limit 3000000
+        undo-outer-limit 3000000)
+    (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
+    (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+#+end_src
+** Tramp
+use =ssh-add= to add keys first
+#+begin_src emacs-lisp
+(setq tramp-default-method "ssh")
 #+end_src
 ** Lsp
 =lsp-deferred= caused emacs (27.1 on mac) to hang during the initial setup after asking to install the language server (e.g. pyright). The workaround is to replace it with =lsp= temporarily
@@ -601,24 +610,24 @@ Useful functions:
 #+end_src
 ** Company
 #+begin_src emacs-lisp
-  (defun dot/init-company-lsp ()
-    (setq-local company-backends (company-capf :with company-dabbrev-code :with company-yasnippet :with company-files)))
-
   ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
   (use-package company
     :after lsp-mode
-    :hook
-    (lsp-mode . dot/init-company-lsp)
+    ;; :hook
+    ;; (lsp-mode . dot/init-company-lsp)
+    :init
+    (setq company-backends '(company-capf))
     :bind (:map company-active-map
            ("<tab>" . company-complete-common-or-cycle))
           (:map lsp-mode-map
            ("<tab>" . company-indent-or-complete-common))
-    :init
-    (global-company-mode)
     :custom
-    (company-backends '(company-dabbrev-code))
+    ;; (company-backends '(company-capf :with company-yasnippet :with company-files))
     (company-minimum-prefix-length 2)
     (company-idle-delay 0.0))
+    :config
+    (global-company-mode)
+
 
   ;; icon + others pretty stuff
   (use-package company-box
@@ -659,7 +668,14 @@ Prefix key: =C-c p=
 )
 ;; better ivy/counsel integration with M-o
 (use-package counsel-projectile
-  :config (counsel-projectile-mode))
+  :after ivy
+  :config
+    (dolist (ivy-func
+    '(counsel-projectile-find-file
+      counsel-projectile-switch-to-buffer))
+    (dot/set-ivy-action-split-find-file ivy-func))
+
+  (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 #+end_src
 ** Magit
@@ -694,20 +710,31 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
                   (window-height . 0.3)))
   )
 #+end_src
+** Yasnippet
+#+begin_src emacs-lisp
+(use-package yasnippet
+:config
+(setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
+(yas-global-mode 1))
+#+end_src
+** Avy
+#+begin_src emacs-lisp
+  (use-package avy)
+#+end_src
 ** Misc
 #+begin_src emacs-lisp
-;; Make sure emacs use the proper ENV VAR
-(use-package exec-path-from-shell)
-;; disable auto load as it is slow
-(when (memq window-system '(mac ns x))
-  (exec-path-from-shell-initialize))
-;; for daemon only
-(when (daemonp)
-  (exec-path-from-shell-initialize))
+  ;; Make sure emacs use the proper ENV VAR
+  (use-package exec-path-from-shell)
+  ;; disable auto load as it is slow
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+  ;; for daemon only
+  ;; (when (daemonp)
+  ;;   (exec-path-from-shell-initialize))
 
-;; rainbow delimiter
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+  ;; rainbow delimiter
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
 
 #+end_src
 * Languages
@@ -781,7 +808,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 
 (use-package blacken
   :after python
-  :custom (blacken-line-length 119))
+  :custom (blacken-line-length 99))
 
 ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
 (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
@@ -816,16 +843,10 @@ useful default keybindings:
 - =C-x k= kill auffer
 ** Helper Functions
 #+begin_src emacs-lisp
-  ;; TODO make them one func with folder path
-  (defun dot/find-org ()
-      "Open Org Dir"
-      (interactive)
-      (counsel-find-file "~/projects/org"))
-
   (defun dot/go-to-dotemacs ()
       "Go To Emacs Config File"
       (interactive)
-      (find-file "~/projects/emacs-config/dotemacs.org"))
+      (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
 
   (defun dot/toggle-frame ()
       "
@@ -862,7 +883,6 @@ useful default keybindings:
       (interactive "MNew Tab Name: ")
       (tab-bar-new-tab)
       (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
-
 #+end_src
 ** Hydra
 #+begin_src emacs-lisp
@@ -893,7 +913,6 @@ useful default keybindings:
       "f" '(counsel-projectile-find-file :which-key "project find file")
       "F" '(counsel-find-file :which-key "find file")
       "r" '(counsel-projectile-rg :which-key "project ripgrep")
-      "q" '(delete-window :which-key "close window")
       "SPC" '(magit-status :which-key "magit status")
       ;; hydra
       "hf" '(hydra-text-scale/body :which-key "scale font size")
@@ -907,13 +926,17 @@ useful default keybindings:
       "C-h" 'evil-window-left
       "C-l" 'evil-window-right
       "C-M-r" 'counsel-recentf
-      "C-M-o" 'dot/find-org
-      "C-M-e" 'dot/go-to-dotemacs
+      "C-M-o" (lambda () (interactive) (counsel-find-file "~/projects/org"))
+      "C-M-p" (lambda () (interactive) (counsel-find-file "~/projects"))
+      "C-M-e" (lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org"))
       "<f12>"   'dot/toggle-maximize-buffer
+      "ZZ" '(delete-window :which-key "close window")
     )
     ;; evil normal mapping
     (general-evil-setup)
     (general-nmap
+      "s" 'avy-goto-char-2
+      "S" 'avy-goto-line
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
     ;; non-override global mapping for normal + insert state
@@ -938,10 +961,14 @@ useful default keybindings:
       "K" 'org-up-element
       "C-c e" 'org-toggle-emphasis
     )
-  )
+    ;; yasnippet
+    ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
+    (general-define-key
+      :states '(insert)
+      :keymaps 'yas-minor-mode-map
+      "M-TAB" #'yas-expand
+      "SPC" yas-maybe-expand
+    )
+)
 #+end_src
 * Todos
-- [ ] Bind key sequence like nmap
-- [ ] auto insert python google style docstring: https://emacs.stackexchange.com/questions/19422/library-for-automatically-inserting-python-docstring-in-google-style
-- [ ] Setup snippet
-- [ ] Org capture
