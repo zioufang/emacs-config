@@ -188,9 +188,6 @@
   (dot/set-ivy-action-split-find-file ivy-func))
   (ivy-mode 1))
 
-
-;; single tab completion
-
 (use-package counsel
   :after ivy
   :bind (("M-x" . counsel-M-x)
@@ -202,17 +199,28 @@
     counsel-recentf))
   (dot/set-ivy-action-split-find-file ivy-func)))
 
-
 (use-package ivy-rich
   :init
   (ivy-rich-mode 1))
 
-(use-package ivy-prescient
-  :after counsel
+;; better M-x, provide frequent items at the top
+(use-package amx
+  :after ivy
+  :custom
+  (amx-backend 'auto)
+  (amx-save-file "~/.config/emacs/amx-hist")
+  (amx-history-length 100)
+  (amx-show-key-bindings nil)
   :config
-  (ivy-prescient-mode 1)
-  (prescient-persist-mode 1)
-  (setq prescient-sort-length-enable nil))
+  (amx-mode 1))
+
+;; unmaintained, still looking for maintainer
+;; (use-package ivy-prescient
+;;   :after counsel
+;;   :config
+;;   (ivy-prescient-mode 1)
+;;   (prescient-persist-mode 1)
+;;   (setq prescient-sort-length-enable nil))
 
 ;; better help for counsel
 (use-package helpful
@@ -232,7 +240,14 @@
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 10)))
+  :config
+  (line-number-mode -1)
+  (column-number-mode -1)
+  (size-indication-mode -1)
+  :custom
+  ((doom-modeline-height 10)
+  (doom-modeline-buffer-encoding nil)
+  ))
 
 ; M-x all-the-icons-install-fonts
 (use-package all-the-icons)
@@ -492,10 +507,12 @@
   :config
   (global-company-mode)
 
-
-;; icon + others pretty stuff
 (use-package company-box
   :hook (company-mode . company-box-mode))
+
+(use-package company-prescient
+  :config
+  (company-prescient-mode 1))
 
 (use-package dap-mode
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
@@ -542,6 +559,8 @@
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 (use-package forge)
+
+(use-package wgrep)
 
 (use-package vterm
 :commands vterm
@@ -669,6 +688,15 @@
 
 (use-package dockerfile-mode)
 
+;; (use-package elfeed
+;; :config
+;; (setf url-queue-timeout 15)
+;; (setq elfeed-feeds
+;;   '(
+;;   "https://hnrss.org/frontpage"
+;;   )
+;; ))
+
 (defun dot/go-to-dotemacs ()
     "Go To Emacs Config File"
     (interactive)
@@ -749,10 +777,15 @@
       "C-l" 'evil-window-right
       "C-M-r" 'counsel-recentf
       "C-M-o" (lambda () (interactive) (counsel-find-file "~/projects/org"))
-      "C-M-p" (lambda () (interactive) (counsel-find-file "~/projects"))
+      "C-M-p" (lambda () (interactive) (counsel-find-file "~/projects/"))
       "C-M-e" (lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org"))
       "<f12>"   'dot/toggle-maximize-buffer
       "ZZ" '(delete-window :which-key "close window")
+    )
+    ;; non-override global mapping for normal + insert state
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "C-s"   'swiper
     )
     ;; evil normal mapping
     (general-evil-setup)
@@ -761,12 +794,9 @@
       "S" 'avy-goto-line
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
-    ;; non-override global mapping for normal + insert state
-    (general-define-key
-      :states '(normal insert visual emacs)
-      "M-p"   'counsel-yank-pop     ;; clipboard history
-      "C-s"   'swiper
-    )
+    ;; insert mapping
+    (general-imap
+      "M-p" 'counsel-yank-pop)
     ;; tab switching
     (general-define-key
       :states '(normal insert visual emacs)
