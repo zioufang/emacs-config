@@ -13,25 +13,25 @@ debug errored out config:
 - =check-parens= for paren syntax error in elisp
 ** Startup Tricks
 #+begin_src emacs-lisp
-;; doom emacs
-(setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
-      gc-cons-percentage 0.6)
-(add-hook 'emacs-startup-hook
-  (lambda ()
-    (setq gc-cons-threshold 100000000 ; 16mb
-          gc-cons-percentage 0.1)))
+  ;; doom emacs
+  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+        gc-cons-percentage 0.6)
+  (add-hook 'emacs-startup-hook
+    (lambda ()
+      (setq gc-cons-threshold 100000000 ; 16mb
+            gc-cons-percentage 0.1)))
 
-;; measure startup time
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (message "*** Emacs loaded in %s with %d garbage collections."
-                     (format "%.2f seconds"
-                             (float-time
-                              (time-subtract after-init-time before-init-time)))
-                     gcs-done)))
+  ;; measure startup time
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "*** Emacs loaded in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
 
-;; https://emacs-lsp.github.io/lsp-mode/page/performance/
-(setq read-process-output-max (* 1024 1024)) ;; 1mb
+  ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+end_src
 ** Package Manager
 *** package
@@ -54,9 +54,9 @@ debug errored out config:
 (setq use-package-always-ensure t)
 #+end_src
 *** straight
-- in =projects/emacs-config,= run =ln -s ../../.config/emacs/straight/versions/default.el .=
 - =straight-pull-all= to update all packages
 - =straight-freeze-versions= & =straight-thaw-versions= to fall back
+- =cp ~/.config/emacs/straight/versions/default.el ~/projects/emacs-config= to keep =default.el= backed up
 #+begin_src emacs-lisp
 ;; Bootstrap straight.el
 (defvar bootstrap-version)
@@ -101,82 +101,80 @@ install font =Cantarell=
 #+end_src
 ** Editor Settings
 #+begin_src emacs-lisp
-(auto-revert-mode t)    ;; auto load file when changed
+  (auto-revert-mode t)    ;; auto load file when changed
 
-(global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
-(global-set-key (kbd "RET") 'newline-and-indent)         ;; Newline always indent
+  (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
+  (global-set-key (kbd "RET") 'newline-and-indent)         ;; Newline always indent
 
-(setq default-directory "~/projects")
-(setq max-lisp-eval-depth 10000)  ;; for lsp-mode
-(setq max-specpdl-size 5000)  ;; for lsp-mode
+  (setq default-directory "~/projects")
+  (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
+  (setq max-specpdl-size 5000)  ;; for lsp-mode
 
-;; y/n rather than yes/no
-(fset 'yes-or-no-p 'y-or-n-p)
+  ;; y/n rather than yes/no
+  (fset 'yes-or-no-p 'y-or-n-p)
 
-;; start every frame maximized
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
+  ;; start every frame maximized
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; Tab
-;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
-(setq-default tab-width 2)
-(setq-default evil-shift-width tab-width)
-
-;; no littering
-(setq user-emacs-directory "~/.cache/emacs")
-(use-package no-littering)
-(setq auto-save-file-name-transforms
-      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
-
-;; replaced by no-littering
-;; store all backup and autosave files in the tmp dir
-;; (setq backup-directory-alist
-;;       `((".*" . ,temporary-file-directory)))
-;; (setq auto-save-file-name-transforms
-;;       `((".*" ,temporary-file-directory t)))
-
-;; make tab key do indent first then completion.
-(setq-default tab-always-indent 'complete)
-(progn
+  ;; Tab
+  ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
+  (setq-default tab-width 2)
+  (setq-default evil-shift-width tab-width)
+  ;; make tab key do indent first then completion.
+  (setq-default tab-always-indent 'complete)
   ;; make indent commands use space only (never tab character)
-  (setq-default indent-tabs-mode nil))
+  (setq-default indent-tabs-mode nil)
 
-;; Line Number
-(column-number-mode)
-(global-display-line-numbers-mode t)
-(setq display-line-numbers-type 'relative)
-;; Disable line numbers for some modes
-(dolist (mode '(org-mode-hook
-                vterm-mode-hook
-                eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  ;; no littering
+  (setq user-emacs-directory "~/.cache/emacs")
+  (use-package no-littering)
+  (setq auto-save-file-name-transforms
+        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
 
-;; hightlight current line
-(global-hl-line-mode t)
+  ;; replaced by no-littering
+  ;; store all backup and autosave files in the tmp dir
+  ;; (setq backup-directory-alist
+  ;;       `((".*" . ,temporary-file-directory)))
+  ;; (setq auto-save-file-name-transforms
+  ;;       `((".*" ,temporary-file-directory t)))
 
-;; keep history
-(savehist-mode 1)
-(setq history-length 50)
-(setq history-delete-duplicates t)
-(setq savehist-save-minibuffer-history 1)
-(setq savehist-additional-variables
-      '(kill-ring
-        search-ring
-        regexp-search-ring))
+  ;; Line Number
+  (column-number-mode)
+  (global-display-line-numbers-mode t)
+  (setq display-line-numbers-type 'relative)
+  ;; Disable line numbers for some modes
+  (dolist (mode '(org-mode-hook
+                  vterm-mode-hook
+                  eshell-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-;; clipboard history, shorter for cleaner counsel-yank-pop
-(setq kill-ring-max 10)
+  ;; hightlight current line
+  (global-hl-line-mode t)
 
-;; enable recentf
-(recentf-mode 1)
-(setq recentf-max-menu-items 25)
-(setq recentf-max-saved-items 25)
+  ;; keep history
+  (savehist-mode 1)
+  (setq history-length 50)
+  (setq history-delete-duplicates t)
+  (setq savehist-save-minibuffer-history 1)
+  (setq savehist-additional-variables
+        '(kill-ring
+          search-ring
+          regexp-search-ring))
 
-;; auto remove trailing whitespace
-(setq show-trailing-whitespace t)
-(add-hook 'before-save-hook
-          (lambda ()
-            (unless (eq major-mode 'markdown-mode)
-              (delete-trailing-whitespace))))
+  ;; clipboard history, shorter for cleaner counsel-yank-pop
+  (setq kill-ring-max 10)
+
+  ;; enable recentf
+  (recentf-mode 1)
+  (setq recentf-max-menu-items 25)
+  (setq recentf-max-saved-items 25)
+
+  ;; auto remove trailing whitespace
+  (setq show-trailing-whitespace t)
+  (add-hook 'before-save-hook
+            (lambda ()
+              (unless (eq major-mode 'markdown-mode)
+                (delete-trailing-whitespace))))
 #+end_src
 * UI
 ** Tab Bar
@@ -802,6 +800,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 - === decrease context and =+= to increase context around the hunk
 #+begin_src emacs-lisp
   (use-package magit
+    ;; enter opens file in the other window
     :bind (:map magit-file-section-map
            ("RET" . magit-diff-visit-file-other-window)
            :map magit-hunk-section-map
@@ -871,8 +870,8 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
   ;; for daemon only
-  ;; (when (daemonp)
-  ;;   (exec-path-from-shell-initialize))
+  (when (daemonp)
+    (exec-path-from-shell-initialize))
 
   ;; rainbow delimiter
   (use-package rainbow-delimiters
@@ -1069,6 +1068,7 @@ useful default keybindings:
         "SPC" '(magit-status :which-key "magit status")
         "g"   '(:ignore g :which-key "magit ops")
         "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+        "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
         "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
 
         ;; find file ops
@@ -1136,5 +1136,6 @@ useful default keybindings:
 #+end_src
 * Todos
 ** bufler to do buffer switching
+** daemon
 ** new competion engine orderless/consult/embark/marginalia
 ** using pass with ivy-pass

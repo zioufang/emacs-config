@@ -88,6 +88,10 @@
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
 (setq-default evil-shift-width tab-width)
+;; make tab key do indent first then completion.
+(setq-default tab-always-indent 'complete)
+;; make indent commands use space only (never tab character)
+(setq-default indent-tabs-mode nil)
 
 ;; no littering
 (setq user-emacs-directory "~/.cache/emacs")
@@ -101,12 +105,6 @@
 ;;       `((".*" . ,temporary-file-directory)))
 ;; (setq auto-save-file-name-transforms
 ;;       `((".*" ,temporary-file-directory t)))
-
-;; make tab key do indent first then completion.
-(setq-default tab-always-indent 'complete)
-(progn
-  ;; make indent commands use space only (never tab character)
-  (setq-default indent-tabs-mode nil))
 
 ;; Line Number
 (column-number-mode)
@@ -599,6 +597,7 @@
 ;; term emulator, needs CMAKE to compile
 
 (use-package magit
+  ;; enter opens file in the other window
   :bind (:map magit-file-section-map
          ("RET" . magit-diff-visit-file-other-window)
          :map magit-hunk-section-map
@@ -656,8 +655,8 @@
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 ;; for daemon only
-;; (when (daemonp)
-;;   (exec-path-from-shell-initialize))
+(when (daemonp)
+  (exec-path-from-shell-initialize))
 
 ;; rainbow delimiter
 (use-package rainbow-delimiters
@@ -827,6 +826,7 @@
       "SPC" '(magit-status :which-key "magit status")
       "g"   '(:ignore g :which-key "magit ops")
       "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+      "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
       "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
 
       ;; find file ops
