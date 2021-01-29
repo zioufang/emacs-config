@@ -446,12 +446,54 @@ list emacs colour name with =list-colors-display=
 (add-to-list 'org-structure-template-alist '("go" . "src go"))
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 #+end_src
-** Org Tree Slide
+** Org present
+#+begin_src emacs-lisp
+(defun dot/org-present-prepare-slide ()
+  (org-overview)
+  (org-show-entry)
+  (org-show-children))
+
+(defun dot/org-present-hook ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.5) variable-pitch)
+                                     (org-verbatim (:height 1.75) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.7) org-block)))
+  (setq header-line-format " ")
+  (org-display-inline-images)
+  (dot/org-present-prepare-slide))
+
+(defun dot/org-present-quit-hook ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
+  (setq header-line-format nil)
+  (org-present-small)
+  (org-remove-inline-images))
+
+(defun dot/org-present-prev ()
+  (interactive)
+  (org-present-prev)
+  (dot/org-present-prepare-slide))
+
+(defun dot/org-present-next ()
+  (interactive)
+  (org-present-next)
+  (dot/org-present-prepare-slide))
+
+(use-package org-present
+  :bind (:map org-present-mode-keymap
+         ("C-c C-l" . dot/org-present-next)
+         ("C-c C-h" . dot/org-present-prev))
+  :hook ((org-present-mode . dot/org-present-hook)
+         (org-present-mode-quit . dot/org-present-quit-hook)))
+#+end_src
+
+#+end_src
+** Org Tree Slide (disabled)
 use for presentation
 default profiles:
 - org-tree-slide-simple-profile
 - org-tree-slide-presentation-profile
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package hide-mode-line)
 
 (defun dot/presentation-setup ()
@@ -987,7 +1029,13 @@ useful default keybindings:
         "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
         "B" '(ivy-switch-buffer :which-key "switch buffer")
         "r"  '(ivy-resume :which-key "ivy resume")
+        ;; magit
         "SPC" '(magit-status :which-key "magit status")
+        "g"   '(:ignore g :which-key "magit ops")
+        "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+        "gd"  '(magit-diff-buffer-file :which-key "git diff current buffer")
+        "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+
         ;; find file ops
         "f" '(:ignore f :which-key "file ops")
         "ff" '(counsel-find-file :which-key "find file")
@@ -1015,7 +1063,8 @@ useful default keybindings:
       (general-define-key
         :states '(normal insert visual emacs)
         "C-s"   'swiper
-        "C-M-r"  '(counsel-projectile-rg :which-key "project ripgrep")
+        "C-M-r" 'counsel-projectile-rg
+        "C-M-p" 'counsel-yank-pop
       )
       ;; evil normal mapping
       (general-evil-setup)
@@ -1024,9 +1073,6 @@ useful default keybindings:
         "S" 'avy-goto-line
         "-" 'dired-jump
         "_" 'dot/split-dired-jump)
-      ;; insert mapping
-      (general-imap
-        "M-p" 'counsel-yank-pop)
       ;; tab switching
       (general-define-key
         :states '(normal insert visual emacs)

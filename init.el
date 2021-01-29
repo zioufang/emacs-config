@@ -383,46 +383,43 @@
 (add-to-list 'org-structure-template-alist '("go" . "src go"))
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 
-(use-package hide-mode-line)
+(defun dot/org-present-prepare-slide ()
+  (org-overview)
+  (org-show-entry)
+  (org-show-children))
 
-(defun dot/presentation-setup ()
-  ;; Hide the mode line
-  (hide-mode-line-mode 1)
+(defun dot/org-present-hook ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.5) variable-pitch)
+                                     (org-verbatim (:height 1.75) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.7) org-block)))
+  (setq header-line-format " ")
+  (org-display-inline-images)
+  (dot/org-present-prepare-slide))
 
-  ;; Display images inline
-  (org-display-inline-images) ;; Can also use org-startup-with-inline-images
+(defun dot/org-present-quit-hook ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
+  (setq header-line-format nil)
+  (org-present-small)
+  (org-remove-inline-images))
 
-  ;; Scale the text.  The next line is for basic scaling:
-  (setq text-scale-mode-amount 3)
-  (text-scale-mode 1))
+(defun dot/org-present-prev ()
+  (interactive)
+  (org-present-prev)
+  (dot/org-present-prepare-slide))
 
-  ;; This option is more advanced, allows you to scale other faces too
-  ;; (setq-local face-remapping-alist '((default (:height 2.0) variable-pitch)
-  ;;                                    (org-verbatim (:height 1.75) org-verbatim)
-  ;;                                    (org-block (:height 1.25) org-block))))
+(defun dot/org-present-next ()
+  (interactive)
+  (org-present-next)
+  (dot/org-present-prepare-slide))
 
-(defun dot/presentation-end ()
-  ;; Show the mode line again
-  (hide-mode-line-mode 0)
-
-  ;; Turn off text scale mode (or use the next line if you didn't use text-scale-mode)
-  ;; (text-scale-mode 0))
-
-  ;; If you use face-remapping-alist, this clears the scaling:
-  (setq-local face-remapping-alist '((default variable-pitch default))))
-
-(use-package org-tree-slide
-  :hook ((org-tree-slide-play . dot/presentation-setup)
-         (org-tree-slide-stop . dot/presentation-end))
-  :custom
-  (org-tree-slide-slide-in-effect t)
-  (org-tree-slide-activate-message "Presentation started!")
-  (org-tree-slide-deactivate-message "Presentation finished!")
-  (org-tree-slide-breadcrumbs " > ")
-  (org-image-actual-width nil)
-  :config
-  (define-key org-tree-slide-mode-map (kbd "C-<left>") 'org-tree-slide-move-previous-tree)
-  (define-key org-tree-slide-mode-map (kbd "C-<right>") 'org-tree-slide-move-next-tree))
+(use-package org-present
+  :bind (:map org-present-mode-keymap
+         ("C-c C-l" . dot/org-present-next)
+         ("C-c C-h" . dot/org-present-prev))
+  :hook ((org-present-mode . dot/org-present-hook)
+         (org-present-mode-quit . dot/org-present-quit-hook)))
 
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun dot/org-babel-tangle-config ()
@@ -801,7 +798,13 @@
       "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
       "B" '(ivy-switch-buffer :which-key "switch buffer")
       "r"  '(ivy-resume :which-key "ivy resume")
+      ;; magit
       "SPC" '(magit-status :which-key "magit status")
+      "g"   '(:ignore g :which-key "magit ops")
+      "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+      "gd"  '(magit-diff-buffer-file :which-key "git diff current buffer")
+      "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+
       ;; find file ops
       "f" '(:ignore f :which-key "file ops")
       "ff" '(counsel-find-file :which-key "find file")
@@ -829,7 +832,8 @@
     (general-define-key
       :states '(normal insert visual emacs)
       "C-s"   'swiper
-      "C-M-r"  '(counsel-projectile-rg :which-key "project ripgrep")
+      "C-M-r" 'counsel-projectile-rg
+      "C-M-p" 'counsel-yank-pop
     )
     ;; evil normal mapping
     (general-evil-setup)
@@ -838,9 +842,6 @@
       "S" 'avy-goto-line
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
-    ;; insert mapping
-    (general-imap
-      "M-p" 'counsel-yank-pop)
     ;; tab switching
     (general-define-key
       :states '(normal insert visual emacs)
