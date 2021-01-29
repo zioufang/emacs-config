@@ -599,13 +599,16 @@
 ;; term emulator, needs CMAKE to compile
 
 (use-package magit
+  :bind (:map magit-file-section-map
+         ("RET" . magit-diff-visit-file-other-window)
+         :map magit-hunk-section-map
+         ("RET" . magit-diff-visit-file-other-window))
   :custom
+  (magit-diff-refine-hunk (quote all)) ;; hightlight the exact diff
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 (use-package magit-todos
   :defer t)
-
-(use-package forge)
 
 (use-package git-link
   :commands git-link
@@ -824,7 +827,6 @@
       "SPC" '(magit-status :which-key "magit status")
       "g"   '(:ignore g :which-key "magit ops")
       "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
-      "gd"  '(magit-diff-buffer-file :which-key "git diff current buffer")
       "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
 
       ;; find file ops

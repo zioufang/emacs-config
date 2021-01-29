@@ -796,30 +796,36 @@ Prefix key: =C-c p=
 ;; term emulator, needs CMAKE to compile
 #+end_src
 ** Git
+*** Magit
 evil keybindings:
 https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
-
+- === decrease context and =+= to increase context around the hunk
 #+begin_src emacs-lisp
-(use-package magit
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (use-package magit
+    :bind (:map magit-file-section-map
+           ("RET" . magit-diff-visit-file-other-window)
+           :map magit-hunk-section-map
+           ("RET" . magit-diff-visit-file-other-window))
+    :custom
+    (magit-diff-refine-hunk (quote all)) ;; hightlight the exact diff
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
-(use-package magit-todos
-  :defer t)
+  (use-package magit-todos
+    :defer t)
+#+end_src
+*** git helpers
+#+begin_src emacs-lisp
+  (use-package git-link
+    :commands git-link
+    :config
+    (setq git-link-open-in-browser t))
 
-(use-package forge)
-
-(use-package git-link
-  :commands git-link
-  :config
-  (setq git-link-open-in-browser t))
-
-(use-package git-gutter
-  :diminish
-  :hook ((text-mode . git-gutter-mode)
-         (prog-mode . git-gutter-mode))
-  :config
-  (setq git-gutter:update-interval 2))
+  (use-package git-gutter
+    :diminish
+    :hook ((text-mode . git-gutter-mode)
+           (prog-mode . git-gutter-mode))
+    :config
+    (setq git-gutter:update-interval 2))
 #+end_src
 ** Wgrep
 #+begin_src emacs-lisp
@@ -1063,7 +1069,6 @@ useful default keybindings:
         "SPC" '(magit-status :which-key "magit status")
         "g"   '(:ignore g :which-key "magit ops")
         "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
-        "gd"  '(magit-diff-buffer-file :which-key "git diff current buffer")
         "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
 
         ;; find file ops
