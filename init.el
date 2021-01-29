@@ -33,6 +33,26 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+;; Bootstrap straight.el
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Always use straight to install on systems other than Linux
+(setq straight-use-package-by-default t)
+
+;; Use straight.el for use-package expressions
+(straight-use-package 'use-package)
+
 (defvar dot-font-size 150)
 (defvar dot-mono-font"JetBrains Mono")
 (defvar dot-variable-font "Cantarell")
@@ -137,6 +157,7 @@
 
 (use-package dired
   :ensure nil
+  :straight nil
   :commands (dired dired-jump)
   :bind (("C-x C-d" . dired-jump))
   :custom
@@ -689,6 +710,7 @@
 ;; Hide the modeline for inferior python processes
 (use-package inferior-python-mode
   :ensure nil
+  :straight nil
   :hook (inferior-python-mode . hide-mode-line-mode))
 
 ;; pyright, it detects venv/.venv automatically

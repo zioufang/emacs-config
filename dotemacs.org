@@ -34,6 +34,7 @@ debug errored out config:
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+end_src
 ** Package Manager
+*** package
 #+begin_src emacs-lisp
 ;; Initialize package sources
 (require 'package)
@@ -42,13 +43,40 @@ debug errored out config:
                          ("org" . "https://orgmode.org/elpa/")
                          ("elpa" . "https://elpa.gnu.org/packages/")))
 (package-initialize)
-
+#+end_src
+*** use-package
+#+begin_src emacs-lisp
 ;; Bootstrap `use-package`
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 (require 'use-package)
 (setq use-package-always-ensure t)
+#+end_src
+*** straight
+- in =projects/emacs-config,= run =ln -s ../../.config/emacs/straight/versions/default.el .=
+- =straight-pull-all= to update all packages
+- =straight-freeze-versions= & =straight-thaw-versions= to fall back
+#+begin_src emacs-lisp
+;; Bootstrap straight.el
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Always use straight to install on systems other than Linux
+(setq straight-use-package-by-default t)
+
+;; Use straight.el for use-package expressions
+(straight-use-package 'use-package)
 #+end_src
 ** Fonts
 install font =Cantarell=
@@ -175,45 +203,46 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
 - rename/move: =R=, press =M-n= (next-history-element) to get the current filename to the minibuffer
 - change file mode: =M=
 #+begin_src emacs-lisp
-(use-package dired
-  :ensure nil
-  :commands (dired dired-jump)
-  :bind (("C-x C-d" . dired-jump))
-  :custom
-  (dired-listing-switches "-Agho --group-directories-first")
-  :config
-  (setq dired-dwim-target t)
-  ;; not use macos ls
-  (when (equal system-type 'darwin)
-    (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
+  (use-package dired
+    :ensure nil
+    :straight nil
+    :commands (dired dired-jump)
+    :bind (("C-x C-d" . dired-jump))
+    :custom
+    (dired-listing-switches "-Agho --group-directories-first")
+    :config
+    (setq dired-dwim-target t)
+    ;; not use macos ls
+    (when (equal system-type 'darwin)
+      (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
 
 
-(use-package dired-single)
-(defun dot/dired-init ()
-  "Bunch of stuff to run for dired, either immediately or when it's loaded."
-  ;; <add other stuff here>
-  (define-key dired-mode-map [remap dired-find-file]
-    'dired-single-buffer)
-  (define-key dired-mode-map [remap dired-mouse-find-file-other-window]
-    'dired-single-buffer-mouse)
-  (define-key dired-mode-map [remap dired-up-directory]
-    'dired-single-up-directory))
+  (use-package dired-single)
+  (defun dot/dired-init ()
+    "Bunch of stuff to run for dired, either immediately or when it's loaded."
+    ;; <add other stuff here>
+    (define-key dired-mode-map [remap dired-find-file]
+      'dired-single-buffer)
+    (define-key dired-mode-map [remap dired-mouse-find-file-other-window]
+      'dired-single-buffer-mouse)
+    (define-key dired-mode-map [remap dired-up-directory]
+      'dired-single-up-directory))
 
-;; if dired's already loaded, then the keymap will be bound
-(if (boundp 'dired-mode-map)
-    ;; we're good to go; just add our bindings
-    (dot/dired-init)
-  ;; it's not loaded yet, so add our bindings to the load-hook
-  (add-hook 'dired-load-hook 'dot/dired-init))
+  ;; if dired's already loaded, then the keymap will be bound
+  (if (boundp 'dired-mode-map)
+      ;; we're good to go; just add our bindings
+      (dot/dired-init)
+    ;; it's not loaded yet, so add our bindings to the load-hook
+    (add-hook 'dired-load-hook 'dot/dired-init))
 
-(use-package all-the-icons-dired
-  :hook (dired-mode . all-the-icons-dired-mode))
+  (use-package all-the-icons-dired
+    :hook (dired-mode . all-the-icons-dired-mode))
 
-(use-package dired-hide-dotfiles
-  :hook (dired-mode . dired-hide-dotfiles-mode)
-  :config
-  (evil-collection-define-key 'normal 'dired-mode-map
-    "gh" 'dired-hide-dotfiles-mode))
+  (use-package dired-hide-dotfiles
+    :hook (dired-mode . dired-hide-dotfiles-mode)
+    :config
+    (evil-collection-define-key 'normal 'dired-mode-map
+      "gh" 'dired-hide-dotfiles-mode))
 #+end_src
 ** Ivy & Counsel
 project-wide search and replace workflow:
@@ -848,77 +877,78 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 ** Python
 =pip install black ipython debugpy=
 #+begin_src emacs-lisp
-;; Built-in Python utilities
-(use-package python
-  :custom
-  (dap-python-debugger 'debugpy)
-  (dap-python-executable "python3")
-  :config
-  (require 'dap-python)
-  ;; Remove guess indent python message
-  (setq python-indent-guess-indent-offset-verbose nil)
-  ;; Use IPython when available or fall back to regular Python
-  (cond
-   ((executable-find "ipython")
-    (progn
-      (setq python-shell-buffer-name "ipython")
-      (setq python-shell-interpreter "ipython")
-      (setq python-shell-interpreter-args "-i --simple-prompt")))
-   ((executable-find "python3")
-    (setq python-shell-interpreter "python3")))
-  ;; change docstring color to be the same of comment
-  (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
-)
+  ;; Built-in Python utilities
+  (use-package python
+    :custom
+    (dap-python-debugger 'debugpy)
+    (dap-python-executable "python3")
+    :config
+    (require 'dap-python)
+    ;; Remove guess indent python message
+    (setq python-indent-guess-indent-offset-verbose nil)
+    ;; Use IPython when available or fall back to regular Python
+    (cond
+     ((executable-find "ipython")
+      (progn
+        (setq python-shell-buffer-name "ipython")
+        (setq python-shell-interpreter "ipython")
+        (setq python-shell-interpreter-args "-i --simple-prompt")))
+     ((executable-find "python3")
+      (setq python-shell-interpreter "python3")))
+    ;; change docstring color to be the same of comment
+    (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
+  )
 
-;; auto switching python venv to <project>/.venv
-;; https://github.com/jorgenschaefer/pyvenv/issues/51
-(defun dot/pyvenv-autoload ()
-          (interactive)
-          "auto activate venv directory if exists"
-          (f-traverse-upwards (lambda (path)
-              (let ((venv-path (f-expand ".venv" path)))
-              (when (f-exists? venv-path)
-              (pyvenv-activate venv-path))))))
+  ;; auto switching python venv to <project>/.venv
+  ;; https://github.com/jorgenschaefer/pyvenv/issues/51
+  (defun dot/pyvenv-autoload ()
+            (interactive)
+            "auto activate venv directory if exists"
+            (f-traverse-upwards (lambda (path)
+                (let ((venv-path (f-expand ".venv" path)))
+                (when (f-exists? venv-path)
+                (pyvenv-activate venv-path))))))
 
-(use-package pyvenv
-  :after python
-  :hook (python-mode . dot/pyvenv-autoload)
-  :config
-  ;; Use IPython when available or fall back to regular Python
-  (cond
-   ((executable-find "ipython")
-    (progn
-      (setq python-shell-buffer-name "ipython")
-      (setq python-shell-interpreter "ipython")
-      (setq python-shell-interpreter-args "-i --simple-prompt")))
-   ((executable-find "python3")
-    (setq python-shell-interpreter "python3")))
-  (pyvenv-tracking-mode 1))
+  (use-package pyvenv
+    :after python
+    :hook (python-mode . dot/pyvenv-autoload)
+    :config
+    ;; Use IPython when available or fall back to regular Python
+    (cond
+     ((executable-find "ipython")
+      (progn
+        (setq python-shell-buffer-name "ipython")
+        (setq python-shell-interpreter "ipython")
+        (setq python-shell-interpreter-args "-i --simple-prompt")))
+     ((executable-find "python3")
+      (setq python-shell-interpreter "python3")))
+    (pyvenv-tracking-mode 1))
 
-;; Hide the modeline for inferior python processes
-(use-package inferior-python-mode
-  :ensure nil
-  :hook (inferior-python-mode . hide-mode-line-mode))
+  ;; Hide the modeline for inferior python processes
+  (use-package inferior-python-mode
+    :ensure nil
+    :straight nil
+    :hook (inferior-python-mode . hide-mode-line-mode))
 
-;; pyright, it detects venv/.venv automatically
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp-deferred)))
-  :init
-  (when (executable-find "python3"
-        (setq lsp-pyright-python-executable-cmd "python3")))
-  :custom
-  (lsp-pyright-typechecking-mode "off")
-  (lsp-pyright-auto-import-completions nil)
-)
+  ;; pyright, it detects venv/.venv automatically
+  (use-package lsp-pyright
+    :hook (python-mode . (lambda ()
+                            (require 'lsp-pyright)
+                            (lsp-deferred)))
+    :init
+    (when (executable-find "python3"
+          (setq lsp-pyright-python-executable-cmd "python3")))
+    :custom
+    (lsp-pyright-typechecking-mode "off")
+    (lsp-pyright-auto-import-completions nil)
+  )
 
-(use-package blacken
-  :after python
-  :custom (blacken-line-length 99))
+  (use-package blacken
+    :after python
+    :custom (blacken-line-length 99))
 
-;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
-(add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+  ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
+  (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 #+end_src
 *** ipython notebook
 #+begin_src emacs-lisp
