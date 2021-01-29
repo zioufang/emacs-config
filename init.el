@@ -41,10 +41,16 @@
 (set-fringe-mode 5)        ; Give some breathing room
 
 (auto-revert-mode t)    ;; auto load file when changed
+
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
+(global-set-key (kbd "RET") 'newline-and-indent)         ;; Newline always indent
+
 (setq default-directory "~/projects")
 (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
 (setq max-specpdl-size 5000)  ;; for lsp-mode
+
+;; y/n rather than yes/no
+(fset 'yes-or-no-p 'y-or-n-p)
 
 ;; start every frame maximized
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
@@ -85,8 +91,19 @@
 ;; hightlight current line
 (global-hl-line-mode t)
 
+;; keep history
+(setq savehist-file "~/.config/emacs/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+
 ;; clipboard history, shorter for cleaner counsel-yank-pop
-(setq kill-ring-max 5)
+(setq kill-ring-max 10)
 
 ;; enable recentf
 (recentf-mode 1)
