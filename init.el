@@ -6,6 +6,15 @@
     (setq gc-cons-threshold 100000000 ; 16mb
           gc-cons-percentage 0.1)))
 
+;; measure startup time
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "*** Emacs loaded in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
+
 ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
@@ -58,6 +67,7 @@
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
+(setq-default evil-shift-width tab-width)
 
 ;; no littering
 (setq user-emacs-directory "~/.cache/emacs")
@@ -92,9 +102,8 @@
 (global-hl-line-mode t)
 
 ;; keep history
-(setq savehist-file "~/.config/emacs/savehist")
 (savehist-mode 1)
-(setq history-length t)
+(setq history-length 50)
 (setq history-delete-duplicates t)
 (setq savehist-save-minibuffer-history 1)
 (setq savehist-additional-variables
@@ -575,7 +584,22 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
+(use-package magit-todos
+  :defer t)
+
 (use-package forge)
+
+(use-package git-link
+  :commands git-link
+  :config
+  (setq git-link-open-in-browser t))
+
+(use-package git-gutter
+  :diminish
+  :hook ((text-mode . git-gutter-mode)
+         (prog-mode . git-gutter-mode))
+  :config
+  (setq git-gutter:update-interval 2))
 
 (use-package wgrep)
 
@@ -772,16 +796,21 @@
       :keymaps 'override
       :prefix "SPC"
       :non-normal-prefix "M-SPC"
-      "h" '(:ignore h :which-key "hydra commands")
       "t" '(vterm-toggle :which-key "toggle vterm")
       "p" '(counsel-projectile-switch-project :which-key "switch project")
       "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
       "B" '(ivy-switch-buffer :which-key "switch buffer")
-      "f" '(counsel-projectile-find-file :which-key "project find file")
-      "F" '(counsel-find-file :which-key "find file")
-      "r" '(counsel-projectile-rg :which-key "project ripgrep")
+      "r"  '(ivy-resume :which-key "ivy resume")
       "SPC" '(magit-status :which-key "magit status")
+      ;; find file ops
+      "f" '(:ignore f :which-key "file ops")
+      "ff" '(counsel-find-file :which-key "find file")
+      "fF" '(counsel-projectile-find-file :which-key "project find file")
+      "fr" '(counsel-recentf :which-key "find recent file")
+      "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
+      "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
       ;; hydra
+      "h" '(:ignore h :which-key "hydra commands")
       "hf" '(hydra-text-scale/body :which-key "scale font size")
       )
     ;; non leader key overrides
@@ -792,9 +821,6 @@
       "C-j" 'evil-window-down
       "C-h" 'evil-window-left
       "C-l" 'evil-window-right
-      "C-M-r" 'counsel-recentf
-      "C-M-o" (lambda () (interactive) (counsel-find-file "~/projects/org"))
-      "C-M-p" (lambda () (interactive) (counsel-find-file "~/projects/"))
       "C-M-e" (lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org"))
       "<f12>"   'dot/toggle-maximize-buffer
       "ZZ" '(delete-window :which-key "close window")
@@ -803,11 +829,12 @@
     (general-define-key
       :states '(normal insert visual emacs)
       "C-s"   'swiper
+      "C-M-r"  '(counsel-projectile-rg :which-key "project ripgrep")
     )
     ;; evil normal mapping
     (general-evil-setup)
     (general-nmap
-      "s" 'avy-goto-char-2
+      "s" 'avy-goto-word-1
       "S" 'avy-goto-line
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
