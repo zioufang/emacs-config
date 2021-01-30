@@ -335,6 +335,48 @@ project-wide search and replace workflow:
 #+end_src
 *** useful niche shortcuts
 - =C-M-m=: run command and keep minibuffer open
+** Bufler (disabled)
+#+begin_src emacs-lisp
+  (use-package bufler
+    :disabled
+    :bind (("C-M-j" . bufler-switch-buffer)
+           ("C-M-k" . bufler-workspace-frame-set))
+    :config
+    (evil-collection-define-key 'normal 'bufler-list-mode-map
+      (kbd "RET")   'bufler-list-buffer-switch
+      (kbd "M-RET") 'bufler-list-buffer-peek
+      "d"           'bufler-list-buffer-kill)
+
+    (setf bufler-groups
+          (bufler-defgroups
+            ;; Subgroup collecting all named workspaces.
+            (group (auto-workspace))
+            ;; Subgroup collecting buffers in a projectile project.
+            (group (auto-projectile))
+            ;; Grouping browser windows
+            (group
+             ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+             (group-or "Help/Info"
+                       (mode-match "*Help*" (rx bos (or "help-" "helpful-")))
+                       ;; (mode-match "*Helpful*" (rx bos "helpful-"))
+                       (mode-match "*Info*" (rx bos "info-"))))
+            (group
+             ;; Subgroup collecting all special buffers (i.e. ones that are not
+             ;; file-backed), except `magit-status-mode' & `dired' buffers (which are allowed to fall
+             ;; through to other groups, so they end up grouped with their project buffers).
+             (group-and "*Special*"
+                        (name-match "**Special**"
+                                    (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace" "Pinentry") "*"))
+                        (lambda (buffer)
+                          (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                               buffer)
+                                      (funcall (mode-match "Dired" (rx bos "dired"))
+                                               buffer)
+                                      (funcall (auto-file) buffer))
+                            "*Special*"))))
+            ;; Group remaining buffers by major mode.
+            (auto-mode))))
+#+end_src
 ** Theme
 #+begin_src emacs-lisp
   ;; Theme
@@ -515,53 +557,6 @@ list emacs colour name with =list-colors-display=
 #+end_src
 
 #+end_src
-** Org Tree Slide (disabled)
-use for presentation
-default profiles:
-- org-tree-slide-simple-profile
-- org-tree-slide-presentation-profile
-#+begin_src emacs-lisp :tangle no
-(use-package hide-mode-line)
-
-(defun dot/presentation-setup ()
-  ;; Hide the mode line
-  (hide-mode-line-mode 1)
-
-  ;; Display images inline
-  (org-display-inline-images) ;; Can also use org-startup-with-inline-images
-
-  ;; Scale the text.  The next line is for basic scaling:
-  (setq text-scale-mode-amount 3)
-  (text-scale-mode 1))
-
-  ;; This option is more advanced, allows you to scale other faces too
-  ;; (setq-local face-remapping-alist '((default (:height 2.0) variable-pitch)
-  ;;                                    (org-verbatim (:height 1.75) org-verbatim)
-  ;;                                    (org-block (:height 1.25) org-block))))
-
-(defun dot/presentation-end ()
-  ;; Show the mode line again
-  (hide-mode-line-mode 0)
-
-  ;; Turn off text scale mode (or use the next line if you didn't use text-scale-mode)
-  ;; (text-scale-mode 0))
-
-  ;; If you use face-remapping-alist, this clears the scaling:
-  (setq-local face-remapping-alist '((default variable-pitch default))))
-
-(use-package org-tree-slide
-  :hook ((org-tree-slide-play . dot/presentation-setup)
-         (org-tree-slide-stop . dot/presentation-end))
-  :custom
-  (org-tree-slide-slide-in-effect t)
-  (org-tree-slide-activate-message "Presentation started!")
-  (org-tree-slide-deactivate-message "Presentation finished!")
-  (org-tree-slide-breadcrumbs " > ")
-  (org-image-actual-width nil)
-  :config
-  (define-key org-tree-slide-mode-map (kbd "C-<left>") 'org-tree-slide-move-previous-tree)
-  (define-key org-tree-slide-mode-map (kbd "C-<right>") 'org-tree-slide-move-next-tree))
-#+end_src
 ** Auto-tangle Config
 #+begin_src emacs-lisp
 ;; Automatically tangle our Emacs.org config file when we save it
@@ -657,6 +652,20 @@ func = <<the-func()>>
         undo-outer-limit 3000000)
     (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
     (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+#+end_src
+** Key chord
+#+begin_src emacs-lisp
+  (defun dot/insert-curly ()
+  (interactive)
+  (insert "{\n}")
+  (evil-normal-state)
+  (evil-open-above 1)
+  )
+
+  (use-package key-chord
+  :config
+  (key-chord-define go-mode-map "{{" 'dot/insert-curly)
+  (key-chord-mode 1))
 #+end_src
 ** Tramp
 use =ssh-add= to add keys first
@@ -1074,10 +1083,10 @@ useful default keybindings:
         ;; find file ops
         "f" '(:ignore f :which-key "file ops")
         "ff" '(counsel-find-file :which-key "find file")
-        "fF" '(counsel-projectile-find-file :which-key "project find file")
+        "fp" '(counsel-projectile-find-file :which-key "project find file")
         "fr" '(counsel-recentf :which-key "find recent file")
         "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-        "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+        "fP" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
         ;; hydra
         "h" '(:ignore h :which-key "hydra commands")
         "hf" '(hydra-text-scale/body :which-key "scale font size")
@@ -1135,7 +1144,6 @@ useful default keybindings:
   )
 #+end_src
 * Todos
-** bufler to do buffer switching
 ** daemon
 ** new competion engine orderless/consult/embark/marginalia
 ** using pass with ivy-pass

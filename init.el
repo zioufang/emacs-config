@@ -278,6 +278,46 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+(use-package bufler
+  :disabled
+  :bind (("C-M-j" . bufler-switch-buffer)
+         ("C-M-k" . bufler-workspace-frame-set))
+  :config
+  (evil-collection-define-key 'normal 'bufler-list-mode-map
+    (kbd "RET")   'bufler-list-buffer-switch
+    (kbd "M-RET") 'bufler-list-buffer-peek
+    "d"           'bufler-list-buffer-kill)
+
+  (setf bufler-groups
+        (bufler-defgroups
+          ;; Subgroup collecting all named workspaces.
+          (group (auto-workspace))
+          ;; Subgroup collecting buffers in a projectile project.
+          (group (auto-projectile))
+          ;; Grouping browser windows
+          (group
+           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+           (group-or "Help/Info"
+                     (mode-match "*Help*" (rx bos (or "help-" "helpful-")))
+                     ;; (mode-match "*Helpful*" (rx bos "helpful-"))
+                     (mode-match "*Info*" (rx bos "info-"))))
+          (group
+           ;; Subgroup collecting all special buffers (i.e. ones that are not
+           ;; file-backed), except `magit-status-mode' & `dired' buffers (which are allowed to fall
+           ;; through to other groups, so they end up grouped with their project buffers).
+           (group-and "*Special*"
+                      (name-match "**Special**"
+                                  (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace" "Pinentry") "*"))
+                      (lambda (buffer)
+                        (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                             buffer)
+                                    (funcall (mode-match "Dired" (rx bos "dired"))
+                                             buffer)
+                                    (funcall (auto-file) buffer))
+                          "*Special*"))))
+          ;; Group remaining buffers by major mode.
+          (auto-mode))))
+
 ;; Theme
 (use-package doom-themes
   :config
@@ -498,6 +538,18 @@
   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
+(defun dot/insert-curly ()
+(interactive)
+(insert "{\n}")
+(evil-normal-state)
+(evil-open-above 1)
+)
+
+(use-package key-chord
+:config
+(key-chord-define go-mode-map "{{" 'dot/insert-curly)
+(key-chord-mode 1))
+
 (setq tramp-default-method "ssh")
 
 (use-package lsp-mode
@@ -604,7 +656,8 @@
          ("RET" . magit-diff-visit-file-other-window))
   :custom
   (magit-diff-refine-hunk (quote all)) ;; hightlight the exact diff
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+)
 
 (use-package magit-todos
   :defer t)
@@ -832,10 +885,10 @@
       ;; find file ops
       "f" '(:ignore f :which-key "file ops")
       "ff" '(counsel-find-file :which-key "find file")
-      "fF" '(counsel-projectile-find-file :which-key "project find file")
+      "fp" '(counsel-projectile-find-file :which-key "project find file")
       "fr" '(counsel-recentf :which-key "find recent file")
       "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-      "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+      "fP" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
       ;; hydra
       "h" '(:ignore h :which-key "hydra commands")
       "hf" '(hydra-text-scale/body :which-key "scale font size")
