@@ -72,7 +72,6 @@
 (auto-revert-mode t)    ;; auto load file when changed
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
-(global-set-key (kbd "RET") 'newline-and-indent)         ;; Newline always indent
 
 (setq default-directory "~/projects")
 (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
@@ -595,10 +594,11 @@
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
-  ;; :config
-  ;; (dap-ui-mode 1)
-
   :config
+  (require 'dap-hydra)
+  ;; (dap-ui-mode 1)
+  (add-hook 'dap-stopped-hook
+        (lambda (arg) (call-interactively #'dap-hydra)))
   ;; Bind `C-c l d` to `dap-hydra` for easy access
   (general-define-key
     :keymaps 'lsp-mode-map
@@ -779,6 +779,8 @@
 
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
+:config
+(require 'dap-go)
 )
 
 (use-package terraform-mode)
@@ -866,11 +868,11 @@
 
         ;; find file ops
         "f" '(:ignore f :which-key "file ops")
-        "ff" '(counsel-find-file :which-key "find file")
-        "fp" '(counsel-projectile-find-file :which-key "project find file")
+        "ff" '(counsel-projectile-find-file :which-key "project find file")
+        "fF" '(counsel-find-file :which-key "find file")
         "fr" '(counsel-recentf :which-key "find recent file")
         "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-        "fP" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+        "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
         ;; hydra
         "h" '(:ignore h :which-key "hydra commands")
         "hf" '(hydra-text-scale/body :which-key "scale font size")
@@ -897,8 +899,9 @@
       ;; evil normal mapping
       (general-evil-setup)
       (general-nmap
-        "s" 'avy-goto-word-1
-        "S" 'avy-goto-line
+        "s" 'avy-goto-char-2
+        "gl" 'avy-goto-line
+        "gw" 'avy-goto-word-1
         "-" 'dired-jump
         "_" 'dot/split-dired-jump)
       ;; tab switching

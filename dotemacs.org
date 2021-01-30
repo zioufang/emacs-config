@@ -105,7 +105,6 @@ install font =Cantarell=
   (auto-revert-mode t)    ;; auto load file when changed
 
   (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
-  (global-set-key (kbd "RET") 'newline-and-indent)         ;; Newline always indent
 
   (setq default-directory "~/projects")
   (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
@@ -744,19 +743,20 @@ Useful functions:
 #+end_src
 ** Dap
 #+begin_src emacs-lisp
-(use-package dap-mode
-  ;; Uncomment the config below if you want all UI panes to be hidden by default!
-  ;; :custom
-  ;; (lsp-enable-dap-auto-configure nil)
-  ;; :config
-  ;; (dap-ui-mode 1)
-
-  :config
-  ;; Bind `C-c l d` to `dap-hydra` for easy access
-  (general-define-key
-    :keymaps 'lsp-mode-map
-    :prefix "C-c"
-    "d" '(dap-hydra t :wk "debugger")))
+  (use-package dap-mode
+    ;; Uncomment the config below if you want all UI panes to be hidden by default!
+    ;; :custom
+    ;; (lsp-enable-dap-auto-configure nil)
+    :config
+    (require 'dap-hydra)
+    ;; (dap-ui-mode 1)
+    (add-hook 'dap-stopped-hook
+          (lambda (arg) (call-interactively #'dap-hydra)))
+    ;; Bind `C-c l d` to `dap-hydra` for easy access
+    (general-define-key
+      :keymaps 'lsp-mode-map
+      :prefix "C-c"
+      "d" '(dap-hydra t :wk "debugger")))
 #+end_src
 ** Projectile
 Prefix key: =C-c p=
@@ -954,16 +954,19 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 (use-package ein)
 #+end_src
 ** Go
-install =gopls= and =godef= first
+install =gopls=, =godef= & =delve= first
+run =(dap-go-setup)= once to get the vscode extension
 #+begin_src emacs-lisp
-(defun dot/lsp-go-before-save-hooks ()
-  (add-hook 'before-save-hook #'lsp-format-buffer t t)
-  (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
+  (defun dot/lsp-go-before-save-hooks ()
+    (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    (add-hook 'before-save-hook #'lsp-organize-imports t t))
+  (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
-(use-package go-mode
-:hook (go-mode . lsp-deferred)
-)
+  (use-package go-mode
+  :hook (go-mode . lsp-deferred)
+  :config
+  (require 'dap-go)
+  )
 #+end_src
 ** Terraform
 #+begin_src emacs-lisp
@@ -1067,11 +1070,11 @@ useful default keybindings:
 
           ;; find file ops
           "f" '(:ignore f :which-key "file ops")
-          "ff" '(counsel-find-file :which-key "find file")
-          "fp" '(counsel-projectile-find-file :which-key "project find file")
+          "ff" '(counsel-projectile-find-file :which-key "project find file")
+          "fF" '(counsel-find-file :which-key "find file")
           "fr" '(counsel-recentf :which-key "find recent file")
           "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-          "fP" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+          "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
           ;; hydra
           "h" '(:ignore h :which-key "hydra commands")
           "hf" '(hydra-text-scale/body :which-key "scale font size")
@@ -1098,8 +1101,9 @@ useful default keybindings:
         ;; evil normal mapping
         (general-evil-setup)
         (general-nmap
-          "s" 'avy-goto-word-1
-          "S" 'avy-goto-line
+          "s" 'avy-goto-char-2
+          "gl" 'avy-goto-line
+          "gw" 'avy-goto-word-1
           "-" 'dired-jump
           "_" 'dot/split-dired-jump)
         ;; tab switching
@@ -1145,6 +1149,5 @@ useful default keybindings:
 #+end_src
 * Todos
 ** daemon
-** dired-hacks
 ** new competion engine orderless/consult/embark/marginalia
 ** using pass with ivy-pass
