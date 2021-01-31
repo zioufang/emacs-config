@@ -1067,7 +1067,6 @@ useful default keybindings:
           "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
           "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
           "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
-
           ;; find file ops
           "f" '(:ignore f :which-key "file ops")
           "ff" '(counsel-projectile-find-file :which-key "project find file")
@@ -1075,6 +1074,7 @@ useful default keybindings:
           "fr" '(counsel-recentf :which-key "find recent file")
           "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
           "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+          "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
           ;; hydra
           "h" '(:ignore h :which-key "hydra commands")
           "hf" '(hydra-text-scale/body :which-key "scale font size")
@@ -1087,7 +1087,6 @@ useful default keybindings:
           "C-j" 'evil-window-down
           "C-h" 'evil-window-left
           "C-l" 'evil-window-right
-          "C-M-e" (lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org"))
           "<f12>"   'dot/toggle-maximize-buffer
           "ZZ" '(delete-window :which-key "close window")
         )
@@ -1097,6 +1096,12 @@ useful default keybindings:
           "C-s"   'swiper
           "C-M-r" 'counsel-projectile-rg
           "C-M-p" 'counsel-yank-pop
+          ;; tab bar
+          "C-M-t" 'dot/new-named-tab
+          "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
+          "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
+          "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
+          "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
         )
         ;; evil normal mapping
         (general-evil-setup)
@@ -1106,15 +1111,6 @@ useful default keybindings:
           "gw" 'avy-goto-word-1
           "-" 'dired-jump
           "_" 'dot/split-dired-jump)
-        ;; tab switching
-        (general-define-key
-          :states '(normal insert visual emacs)
-          "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-          "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-          "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-          "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-          "C-M-t" 'dot/new-named-tab
-        )
         ;; org-mod
         (general-define-key
           :states 'normal
@@ -1123,8 +1119,6 @@ useful default keybindings:
           "C-c e" 'org-toggle-emphasis
         )
         ;; dired-mod
-  (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file) ; was dired-advertised-find-file
-  (define-key dired-mode-map (kbd "^") (lambda () (interactive) (find-alternate-file "..")))  ; was dired-up-directory
         (general-define-key
           :states  'normal
           :keymaps 'dired-mode-map
