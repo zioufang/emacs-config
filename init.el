@@ -344,9 +344,9 @@
 
 (defun dot/org-font-setup ()
   ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+  ;; (font-lock-add-keywords 'org-mode
+  ;;                         '(("^ *\\([-]\\) "
+  ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
  ;; Set faces for heading levels
   (dolist (face '((org-level-1 . 1.2)
                   (org-level-2 . 1.1)
@@ -378,9 +378,6 @@
     (set-variable 'org-hide-emphasis-markers t))
   )
 
-(setq org-todo-keywords
-  '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
-
 (use-package org
   :hook (org-mode . dot/org-mode-setup)
   :config
@@ -391,11 +388,18 @@
   ;; (define-key org-mode-map (kbd "<normal-state> C-k") nil)
   )
 
-(use-package org-bullets
+(use-package org-superstar
   :after org
-  :hook (org-mode . org-bullets-mode)
+  :hook (org-mode . (lambda () (org-superstar-mode 1)))
   :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (org-superstar-item-bullet-alist
+  '((?- . ?•)
+    (?+ . ?➤))))
+
+(straight-use-package '(org-appear :type git :host github :repo "awth13/org-appear"))
+(use-package org-appear
+  :after org
+  :hook (org-mode . org-appear-mode))
 
 (defun dot/org-mode-visual-fill ()
   (setq visual-fill-column-width 100
@@ -437,7 +441,8 @@
                                      (org-block-begin-line (:height 0.7) org-block)))
   (setq header-line-format " ")
   (org-display-inline-images)
-  (dot/org-present-prepare-slide))
+  (dot/org-present-prepare-slide)
+  (setq-local org-appear-mode nil))
 
 (defun dot/org-present-quit-hook ()
   (setq-local face-remapping-alist '((default variable-pitch default)))
@@ -885,12 +890,12 @@
       "C-j" 'evil-window-down
       "C-h" 'evil-window-left
       "C-l" 'evil-window-right
-      "<f12>"   'dot/toggle-maximize-buffer
       "ZZ" '(delete-window :which-key "close window")
     )
     ;; non-override global mapping for normal + insert state
     (general-define-key
       :states '(normal insert visual emacs)
+      "<f12>"   'dot/toggle-maximize-buffer
       "C-s"   'swiper
       "C-M-r" 'counsel-projectile-rg
       "C-M-p" 'counsel-yank-pop
@@ -914,7 +919,6 @@
       :states 'normal
       :keymaps 'org-mode-map
       "K" 'org-up-element
-      "C-c e" 'org-toggle-emphasis
     )
     ;; dired-mod
     (general-define-key
@@ -923,11 +927,6 @@
       ;; reuse dired buffer
       "RET"    'dired-find-alternate-file
       "-"      (lambda () (interactive) (find-alternate-file ".."))
-      ;; in buffer rename with C-c C-c to confirm
-      "i"      (lambda () (interactive) (evil-insert 1))
-      "I"      (lambda () (interactive) (evil-insert-line 1))
-      "a"      (lambda () (interactive) (evil-append 1))
-      "A"      (lambda () (interactive) (evil-append-line 1))
     )
     ;; yasnippet
     ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
