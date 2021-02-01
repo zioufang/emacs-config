@@ -410,7 +410,7 @@ project-wide search and replace workflow:
 
 * Org Mode
 =Shift-Tab= to toggle headings for the whole doc
-** Look & Feel
+** Basic Setup
 list emacs colour name with =list-colors-display=
 #+begin_src emacs-lisp
   (defun dot/org-mode-setup ()
@@ -460,9 +460,29 @@ list emacs colour name with =list-colors-display=
     :config
     (setq org-ellipsis " ▾")
     (dot/org-font-setup)
-    ;; remove C-j/k for org-forward/backward-heading-same-level
-    ;; (define-key org-mode-map (kbd "<normal-state> C-j") nil)
-    ;; (define-key org-mode-map (kbd "<normal-state> C-k") nil)
+    (setq org-agenda-files
+      '("~/projects/org/personal.org"
+        "~/projects/org/tasks.org"))
+    (setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
+    ;; tags
+    (setq org-tag-alist
+      '((:startgroup)
+        ; Put mutually exclusive tags here
+        (:endgroup)
+        ("@errand" . ?E)
+        ("@home" . ?H)
+        ("@work" . ?W)))
+    ;; refiling
+    (setq org-refile-targets
+      '(("archive.org" :maxlevel . 1)))
+    ;; Save Org buffers after refiling!
+    (advice-add 'org-refile :after 'org-save-all-org-buffers)
+    ;; org capture
+    (setq org-capture-templates
+      `(("t" "Tasks / Projects")
+        ("tt" "Task" entry (file+olp "~/projects/org/tasks" "Inbox")
+            "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)))
     )
 
   (use-package org-superstar
@@ -486,6 +506,10 @@ list emacs colour name with =list-colors-display=
   (use-package visual-fill-column
     :after org
     :hook (org-mode . dot/org-mode-visual-fill))
+#+end_src
+** Agenda
+#+begin_src emacs-lisp
+
 #+end_src
 ** Babel
 #+begin_src emacs-lisp
@@ -1072,18 +1096,22 @@ useful default keybindings:
         "r"  '(ivy-resume :which-key "ivy resume")
         ;; magit
         "SPC" '(magit-status :which-key "magit status")
-        "g"   '(:ignore g :which-key "magit ops")
+        "g"   '(:ignore g :which-key "magit commands")
         "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
         "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
         "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
         ;; find file ops
-        "f" '(:ignore f :which-key "file ops")
+        "f" '(:ignore f :which-key "file commands")
         "ff" '(counsel-projectile-find-file :which-key "project find file")
         "fF" '(counsel-find-file :which-key "find file")
         "fr" '(counsel-recentf :which-key "find recent file")
         "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
         "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
         "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+        ;; org
+        "o" '(:ignore o :which-key "org commands")
+        "oa"  '(org-agenda :which-key "agenda")
+        "oc"  '(org-capture t :which-key "capture")
         ;; hydra
         "h" '(:ignore h :which-key "hydra commands")
         "hf" '(hydra-text-scale/body :which-key "scale font size")
