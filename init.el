@@ -70,6 +70,7 @@
 (set-fringe-mode 5)        ; Give some breathing room
 
 (auto-revert-mode t)    ;; auto load file when changed
+(setq auto-revert-avoid-polling t)
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
 
@@ -145,7 +146,8 @@
 
 (setq tab-bar-new-tab-to `rightmost
       tab-bar-show t
-      tab-bar-new-tab-choice "~/projects"
+      ;; tab-bar-new-tab-choice "~/projects"
+      tab-bar-new-tab-choice "*scratch*"
 )
 
 ;; Get the current tab name for use in some other display when tab-bar-show = nil
@@ -650,16 +652,31 @@
 (use-package counsel-projectile
   :after ivy
   :config
+  ;; FIXME split ivy action doesnt work on projectile-find-file cmd, because dup file paths
+  ;; e.g. proj/subdir/subdir/main.py instead of proj/subdir/main.py
     (dolist (ivy-func
     '(counsel-projectile-find-file
       counsel-projectile-switch-to-buffer))
     (dot/set-ivy-action-split-find-file ivy-func))
-
   (counsel-projectile-mode))
 ;; term emulator, needs CMAKE to compile
 
+(defun dot/update-vc ()
+  "Update vc in all verson-controlled buffers when magit refreshes.
+   Big drag on performance."
+  ;; (dolist (buf (buffer-list))
+  (require 'counsel-projectile)
+  (dolist (buf (counsel-projectile--project-buffers))
+    (with-current-buffer buf
+      (vc-refresh-state))))
+
 (use-package magit
   ;; enter opens file in the other window
+  ;; :config
+  ;; (advice-add 'magit-checkout-revision :after 'dot/update-vc '((name . "magit-refresh-on-checkout-revision")))
+  ;; (advice-add 'magit-branch-create :after 'dot/update-vc '((name . "magit-refresh-on-branch-ckkate")))
+  ;; (advice-add 'magit-branch-and-checkout :after 'dot/update-vc '((name .  "magit-refresh-on-checkout-and-branch")))
+  ;; (advice-add 'magit-branch-or-checkout :after 'dot/update-vc '((name .  "magit-refresh-on-branch-or-checkout")))`
   :bind (:map magit-file-section-map
          ("RET" . magit-diff-visit-file-other-window)
          :map magit-hunk-section-map
@@ -705,11 +722,14 @@
 )
 
 (use-package yasnippet
+;; void function error with yasnippet-snippets--fixed-indent
+:disabled
 :config
 (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
 (yas-global-mode 1))
 
-(use-package avy)
+(use-package avy
+)
 
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell)
@@ -725,77 +745,85 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; Built-in Python utilities
-(use-package python
-  :custom
-  (dap-python-debugger 'debugpy)
-  (dap-python-executable "python3")
-  :config
-  (require 'dap-python)
-  ;; Remove guess indent python message
-  (setq python-indent-guess-indent-offset-verbose nil)
-  ;; Use IPython when available or fall back to regular Python
-  (cond
-   ((executable-find "ipython")
-    (progn
-      (setq python-shell-buffer-name "ipython")
-      (setq python-shell-interpreter "ipython")
-      (setq python-shell-interpreter-args "-i --simple-prompt")))
-   ((executable-find "python3")
-    (setq python-shell-interpreter "python3")))
-  ;; change docstring color to be the same of comment
-  (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
-)
+  (use-package python
+    :custom
+    (dap-python-debugger 'debugpy)
+    (dap-python-executable "python3")
+    :config
+    (require 'dap-python)
+    ;; Remove guess indent python message
+    (setq python-indent-guess-indent-offset-verbose nil)
+    ;; Use IPython when available or fall back to regular Python
+    (cond
+     ((executable-find "ipython")
+      (progn
+        (setq python-shell-buffer-name "ipython")
+        (setq python-shell-interpreter "ipython")
+        (setq python-shell-interpreter-args "-i --simple-prompt")))
+     ((executable-find "python3")
+      (setq python-shell-interpreter "python3")))
+    ;; change docstring color to be the same of comment
+    (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
+  )
 
-;; auto switching python venv to <project>/.venv
-;; https://github.com/jorgenschaefer/pyvenv/issues/51
-(defun dot/pyvenv-autoload ()
-          (interactive)
-          "auto activate venv directory if exists"
-          (f-traverse-upwards (lambda (path)
-              (let ((venv-path (f-expand ".venv" path)))
-              (when (f-exists? venv-path)
-              (pyvenv-activate venv-path))))))
+  ;; auto switching python venv to <project>/.venv
+  ;; https://github.com/jorgenschaefer/pyvenv/issues/51
+  (defun dot/pyvenv-autoload ()
+            (interactive)
+            "auto activate venv directory if exists"
+            (f-traverse-upwards (lambda (path)
+                (let ((venv-path (f-expand ".venv" path)))
+                (when (f-exists? venv-path)
+                (pyvenv-activate venv-path))))))
 
-(use-package pyvenv
-  :after python
-  :hook (python-mode . dot/pyvenv-autoload)
-  :config
-  ;; Use IPython when available or fall back to regular Python
-  (cond
-   ((executable-find "ipython")
-    (progn
-      (setq python-shell-buffer-name "ipython")
-      (setq python-shell-interpreter "ipython")
-      (setq python-shell-interpreter-args "-i --simple-prompt")))
-   ((executable-find "python3")
-    (setq python-shell-interpreter "python3")))
-  (pyvenv-tracking-mode 1))
+  (use-package pyvenv
+    :after python
+    :hook (python-mode . dot/pyvenv-autoload)
+    :config
+    ;; Use IPython when available or fall back to regular Python
+    (cond
+     ((executable-find "ipython")
+      (progn
+        (setq python-shell-buffer-name "ipython")
+        (setq python-shell-interpreter "ipython")
+        (setq python-shell-interpreter-args "-i --simple-prompt")))
+     ((executable-find "python3")
+      (setq python-shell-interpreter "python3")))
+    (pyvenv-tracking-mode 1))
 
-;; Hide the modeline for inferior python processes
-(use-package inferior-python-mode
-  :ensure nil
-  :straight nil
-  :hook (inferior-python-mode . hide-mode-line-mode))
+  ;; Hide the modeline for inferior python processes
+  (use-package inferior-python-mode
+    :ensure nil
+    :straight nil
+    :hook (inferior-python-mode . hide-mode-line-mode))
 
-;; pyright, it detects venv/.venv automatically
-(use-package lsp-pyright
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp-deferred)))
-  :init
-  (when (executable-find "python3"
-        (setq lsp-pyright-python-executable-cmd "python3")))
-  :custom
-  (lsp-pyright-typechecking-mode "off")
-  (lsp-pyright-auto-import-completions nil)
-)
+  ;; pyright, it detects venv/.venv automatically
+  (use-package lsp-pyright
+    :hook (python-mode . (lambda ()
+                            (require 'lsp-pyright)
+                            (lsp-deferred)))
+    :init
+    (when (executable-find "python3"
+          (setq lsp-pyright-python-executable-cmd "python3")))
+    ;; :custom
+    ;; (lsp-pyright-typechecking-mode "off")
+  )
 
-(use-package blacken
-  :after python
-  :custom (blacken-line-length 99))
+;; (use-package lsp-python-ms
+;;   :ensure t
+;;   :init
+;;   (setq lsp-python-ms-auto-install-server t
+;;         lsp-python-ms-python-executable-cmd "python3")
+;;   :hook (python-mode . (lambda ()
+;;                           (require 'lsp-python-ms)
+;;                           (lsp-deferred))))
 
-;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
-(add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+  (use-package blacken
+    :after python
+    :custom (blacken-line-length 99))
+
+  ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
+  (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 
 (use-package ein)
 
@@ -858,6 +886,12 @@
   (interactive)
   (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
+(defun dot/refresh-projectile-mode ()
+  "Turn projectile off and on to refresh"
+  (interactive)
+  (projectile-mode -1)
+  (projectile-mode))
+
 (defun dot/new-named-tab (name)
     "Create a new tab with name inputs, prefixed by its index"
     (interactive "MNew Tab Name: ")
@@ -886,12 +920,15 @@
       "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
       "B" '(ivy-switch-buffer :which-key "switch buffer")
       "r"  '(ivy-resume :which-key "ivy resume")
+      "k" '(kill-current-buffer :which-key "kill current buffer")
+      "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
       ;; magit
       "SPC" '(magit-status :which-key "magit status")
       "g"   '(:ignore g :which-key "magit commands")
       "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
       "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
       "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+      "gm"  '(vc-refresh-state :which-key "update modeline vc state")
       ;; find file ops
       "f" '(:ignore f :which-key "file commands")
       "ff" '(counsel-projectile-find-file :which-key "project find file")
@@ -900,6 +937,11 @@
       "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
       "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
       "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+      ;; linting
+      "l" '(:ignore l :which-key "linting commands")
+      "ll" '(flycheck-list-errors :which-key "list errors")
+      "lj" '(flycheck-next-error :which-key "next error")
+      "lk" '(flycheck-previous-error :which-key "previous error")
       ;; org
       "o" '(:ignore o :which-key "org commands")
       "oa"  '(org-agenda :which-key "agenda")
@@ -910,7 +952,7 @@
       )
     ;; non leader key overrides
     (general-define-key
-      :states '(normal emacs)
+      :states '(normal visual emacs)
       :keymaps 'override
       "C-k" 'evil-window-up
       "C-j" 'evil-window-down
@@ -923,21 +965,26 @@
       :states '(normal insert visual emacs)
       "<f12>"   'dot/toggle-maximize-buffer
       "C-s"   'swiper
-      "C-M-r" 'counsel-projectile-rg
+      "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
       "C-M-p" 'counsel-yank-pop
       ;; tab bar
       "C-M-t" 'dot/new-named-tab
+      "C-M-l" 'tab-bar-select-tab-by-name
+      "C-M-k" 'tab-bar-close-tab
       "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
       "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
       "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
       "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
     )
-    ;; evil normal mapping
-    (general-evil-setup)
-    (general-nmap
-      "s" 'avy-goto-char-2
+    ;; evil normal/visual mapping
+    ;; (general-evil-setup)
+    (general-define-key
+      :states '(normal visual)
+      "s" 'avy-goto-char-2-below
+      "S" 'avy-goto-char-2-above
       "gl" 'avy-goto-line
       "gw" 'avy-goto-word-1
+      "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
       "-" 'dired-jump
       "_" 'dot/split-dired-jump)
     ;; org-mod
