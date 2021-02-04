@@ -898,11 +898,11 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 ** Yasnippet
 #+begin_src emacs-lisp
   (use-package yasnippet
-  ;; void function error with yasnippet-snippets--fixed-indent
-  :disabled
   :config
   (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
-  (yas-global-mode 1))
+  (yas-reload-all)
+  (add-hook 'prog-mode-hook #'yas-minor-mode)
+  )
 #+end_src
 ** Avy
 #+begin_src emacs-lisp

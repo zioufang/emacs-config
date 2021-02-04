@@ -722,11 +722,11 @@
 )
 
 (use-package yasnippet
-;; void function error with yasnippet-snippets--fixed-indent
-:disabled
 :config
 (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
-(yas-global-mode 1))
+(yas-reload-all)
+(add-hook 'prog-mode-hook #'yas-minor-mode)
+)
 
 (use-package avy
 )
