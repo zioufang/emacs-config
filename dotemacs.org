@@ -20,11 +20,11 @@ debug errored out config:
 ** Startup Tricks
 #+begin_src emacs-lisp
   ;; doom emacs
-  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+  (setq gc-cons-threshold (* 50 1000 1000)
         gc-cons-percentage 0.6)
   (add-hook 'emacs-startup-hook
     (lambda ()
-      (setq gc-cons-threshold 100000000 ; 16mb
+      (setq gc-cons-threshold (* 2 1000 1000)
             gc-cons-percentage 0.1)))
 
   ;; measure startup time
@@ -52,12 +52,13 @@ debug errored out config:
 #+end_src
 *** use-package
 #+begin_src emacs-lisp
-;; Bootstrap `use-package`
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(require 'use-package)
-(setq use-package-always-ensure t)
+  ;; Bootstrap `use-package`
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
+  (require 'use-package)
+  (setq use-package-always-ensure t)
+  (setq use-package-verbose t) ;; for debugging startup time
 #+end_src
 *** straight
 - =straight-pull-all= to update all packages
@@ -297,7 +298,8 @@ project-wide search and replace workflow:
     (dot/set-ivy-action-split-find-file ivy-func)))
 
   (use-package ivy-rich
-    :init
+    :after ivy
+    :config
     (ivy-rich-mode 1))
 
   ;; better M-x, provide frequent items at the top
@@ -321,6 +323,7 @@ project-wide search and replace workflow:
 
   ;; better help for counsel
   (use-package helpful
+    :after ivy
     :custom
     (counsel-describe-function-function #'helpful-callable)
     (counsel-describe-variable-function #'helpful-variable)
@@ -414,7 +417,8 @@ project-wide search and replace workflow:
 #+end_src
 ** Command Log Mode
 #+begin_src emacs-lisp
-(use-package command-log-mode)
+  (use-package command-log-mode
+   :disabled)
 #+end_src
 
 * Org Mode
@@ -465,6 +469,7 @@ list emacs colour name with =list-colors-display=
     )
 
   (use-package org
+    :commands (org-capture org-agenda)
     :hook (org-mode . dot/org-mode-setup)
     :config
     (setq org-ellipsis " ▾")
@@ -522,23 +527,25 @@ list emacs colour name with =list-colors-display=
 #+end_src
 ** Babel
 #+begin_src emacs-lisp
-(require 'ob-go)
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t)
-    (go . t)
-    (ein . t)
-    ))
-(setq org-confirm-babel-evaluate nil)
+  (with-eval-after-load 'org
+    (require 'ob-go)
+    (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((emacs-lisp . t)
+        (python . t)
+        (go . t)
+        (ein . t)
+        ))
+    (setq org-confirm-babel-evaluate nil)
 
-(require 'org-tempo)
-(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-(add-to-list 'org-structure-template-alist '("py" . "src python"))
-(add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
-"))
-(add-to-list 'org-structure-template-alist '("go" . "src go"))
-(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+    (require 'org-tempo)
+    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+    (add-to-list 'org-structure-template-alist '("py" . "src python"))
+    (add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
+    "))
+    (add-to-list 'org-structure-template-alist '("go" . "src go"))
+    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  )
 #+end_src
 ** Org present
 #+begin_src emacs-lisp
@@ -575,6 +582,7 @@ list emacs colour name with =list-colors-display=
     (dot/org-present-prepare-slide))
 
   (use-package org-present
+    :commands org-present
     :bind (:map org-present-mode-keymap
            ("C-c C-l" . dot/org-present-next)
            ("C-c C-h" . dot/org-present-prev))
@@ -703,10 +711,7 @@ use =ssh-add= to add keys first
 prefix key: =C-c l=
 #+begin_src emacs-lisp
 (use-package lsp-mode
-  :defer t
   :commands (lsp lsp-deferred)
-  :hook
-  (python-mode . lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
   (lsp-enable-which-key-integration t)
@@ -717,7 +722,7 @@ prefix key: =C-c l=
 )
 
 (use-package flycheck
-  :init (global-flycheck-mode))
+  :hook (lsp-mode . global-flycheck-mode))
 #+end_src
 *** lsp-ui
 #+begin_src emacs-lisp
@@ -744,7 +749,8 @@ Useful functions:
 - =lsp-ivy-workspace-symbol=
 - =lsp-ivy-global-workspace-symbol=
  #+begin_src emacs-lisp
-(use-package lsp-ivy)
+  (use-package lsp-ivy
+  :after lsp-mode)
  #+end_src
 
 *** breadcrumb on top (disabled)
@@ -763,14 +769,12 @@ Useful functions:
     :after lsp-mode
     ;; :hook
     ;; (lsp-mode . dot/init-company-lsp)
-    :init
-    (setq company-backends '(company-capf))
     :bind (:map company-active-map
            ("<tab>" . company-complete-common-or-cycle))
           (:map lsp-mode-map
            ("<tab>" . company-indent-or-complete-common))
     :custom
-    ;; (company-backends '(company-capf :with company-yasnippet :with company-files))
+    (company-backends '(company-capf))
     (company-minimum-prefix-length 2)
     (company-idle-delay 0.0))
     :config
@@ -780,6 +784,7 @@ Useful functions:
     :hook (company-mode . company-box-mode))
 
   (use-package company-prescient
+    :after company
     :config
     (company-prescient-mode 1))
 #+end_src
@@ -789,6 +794,7 @@ Useful functions:
     ;; Uncomment the config below if you want all UI panes to be hidden by default!
     ;; :custom
     ;; (lsp-enable-dap-auto-configure nil)
+    :commands dap-debug
     :config
     (require 'dap-hydra)
     ;; (dap-ui-mode 1)
@@ -819,7 +825,7 @@ Prefix key: =C-c p=
   )
   ;; better ivy/counsel integration with M-o
   (use-package counsel-projectile
-    :after ivy
+    :after projectile
     :config
     ;; FIXME split ivy action doesnt work on projectile-find-file cmd, because dup file paths
     ;; e.g. proj/subdir/subdir/main.py instead of proj/subdir/main.py
@@ -861,7 +867,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
   (use-package magit-todos
-    :defer t)
+    :after magit)
 #+end_src
 *** git helpers
 #+begin_src emacs-lisp
@@ -888,6 +894,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
   :config (setq vterm-max-scrollback 10000))
 
   (use-package vterm-toggle
+  :commands vterm
   :config
   (setq vterm-toggle-fullscreen-p nil)
   ;; open vterm in dedicated bottom window
@@ -938,6 +945,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 #+begin_src emacs-lisp
     ;; Built-in Python utilities
     (use-package python
+      :hook (python-mode . lsp-deferred)
       :custom
       (dap-python-debugger 'debugpy)
       (dap-python-executable "python3")
@@ -994,7 +1002,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
       :hook (python-mode . (lambda ()
                               (require 'lsp-pyright)
                               (lsp-deferred)))
-      :init
+      :config
       (when (executable-find "python3"
             (setq lsp-pyright-python-executable-cmd "python3")))
       ;; :custom
@@ -1019,7 +1027,8 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 #+end_src
 *** ipython notebook
 #+begin_src emacs-lisp
-(use-package ein)
+  (use-package ein
+  :commands ein:run)
 #+end_src
 ** Go
 install =gopls=, =godef= & =delve= first
@@ -1038,11 +1047,13 @@ run =(dap-go-setup)= once to get the vscode extension
 #+end_src
 ** Terraform
 #+begin_src emacs-lisp
-(use-package terraform-mode)
+(use-package terraform-mode
+  :mode "\\.tf\\'")
 #+end_src
 ** Dockerfile
 #+begin_src emacs-lisp
-(use-package dockerfile-mode)
+(use-package dockerfile-mode
+  :mode "\\Dockerfile\\'")
 #+end_src
 * Chill
 ** Elfeed
@@ -1111,13 +1122,14 @@ useful default keybindings:
 #+end_src
 ** Hydra
 #+begin_src emacs-lisp
-(use-package hydra)
+  (use-package hydra
+   :defer t)
 
-(defhydra hydra-text-scale (:timeout 4)
-  "scale font size"
-  ("k" text-scale-increase "increase")
-  ("j" text-scale-decrease "decrease")
-  ("q" nil "quit" :exit t))
+  (defhydra hydra-text-scale (:timeout 4)
+    "scale font size"
+    ("k" text-scale-increase "increase")
+    ("j" text-scale-decrease "decrease")
+    ("q" nil "quit" :exit t))
 #+end_src
 ** General
 #+begin_src emacs-lisp

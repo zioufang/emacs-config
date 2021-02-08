@@ -1,9 +1,9 @@
 ;; doom emacs
-(setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+(setq gc-cons-threshold (* 50 1000 1000)
       gc-cons-percentage 0.6)
 (add-hook 'emacs-startup-hook
   (lambda ()
-    (setq gc-cons-threshold 100000000 ; 16mb
+    (setq gc-cons-threshold (* 2 1000 1000)
           gc-cons-percentage 0.1)))
 
 ;; measure startup time
@@ -32,6 +32,7 @@
   (package-install 'use-package))
 (require 'use-package)
 (setq use-package-always-ensure t)
+(setq use-package-verbose t) ;; for debugging startup time
 
 ;; Bootstrap straight.el
 (defvar bootstrap-version)
@@ -231,7 +232,8 @@
   (dot/set-ivy-action-split-find-file ivy-func)))
 
 (use-package ivy-rich
-  :init
+  :after ivy
+  :config
   (ivy-rich-mode 1))
 
 ;; better M-x, provide frequent items at the top
@@ -255,6 +257,7 @@
 
 ;; better help for counsel
 (use-package helpful
+  :after ivy
   :custom
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
@@ -338,7 +341,8 @@
   :config
   (setq which-key-idle-delay 0.2))
 
-(use-package command-log-mode)
+(use-package command-log-mode
+ :disabled)
 
 (defun dot/org-mode-setup ()
   (org-indent-mode)
@@ -383,6 +387,7 @@
   )
 
 (use-package org
+  :commands (org-capture org-agenda)
   :hook (org-mode . dot/org-mode-setup)
   :config
   (setq org-ellipsis " ▾")
@@ -436,23 +441,25 @@
 
 
 
-(require 'ob-go)
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t)
-    (go . t)
-    (ein . t)
-    ))
-(setq org-confirm-babel-evaluate nil)
+(with-eval-after-load 'org
+  (require 'ob-go)
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((emacs-lisp . t)
+      (python . t)
+      (go . t)
+      (ein . t)
+      ))
+  (setq org-confirm-babel-evaluate nil)
 
-(require 'org-tempo)
-(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-(add-to-list 'org-structure-template-alist '("py" . "src python"))
-(add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
-"))
-(add-to-list 'org-structure-template-alist '("go" . "src go"))
-(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python"))
+  (add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
+  "))
+  (add-to-list 'org-structure-template-alist '("go" . "src go"))
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+)
 
 (defun dot/org-present-prepare-slide ()
   (org-overview)
@@ -487,6 +494,7 @@
   (dot/org-present-prepare-slide))
 
 (use-package org-present
+  :commands org-present
   :bind (:map org-present-mode-keymap
          ("C-c C-l" . dot/org-present-next)
          ("C-c C-h" . dot/org-present-prev))
@@ -566,10 +574,7 @@
 (setq tramp-default-method "ssh")
 
 (use-package lsp-mode
-  :defer t
   :commands (lsp lsp-deferred)
-  :hook
-  (python-mode . lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
   (lsp-enable-which-key-integration t)
@@ -580,7 +585,7 @@
 )
 
 (use-package flycheck
-  :init (global-flycheck-mode))
+  :hook (lsp-mode . global-flycheck-mode))
 
 (use-package lsp-ui
 :after lsp-mode
@@ -594,21 +599,20 @@
 (use-package lsp-treemacs
   :after lsp-mode)
 
-(use-package lsp-ivy)
+(use-package lsp-ivy
+:after lsp-mode)
 
 ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
 (use-package company
   :after lsp-mode
   ;; :hook
   ;; (lsp-mode . dot/init-company-lsp)
-  :init
-  (setq company-backends '(company-capf))
   :bind (:map company-active-map
          ("<tab>" . company-complete-common-or-cycle))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :custom
-  ;; (company-backends '(company-capf :with company-yasnippet :with company-files))
+  (company-backends '(company-capf))
   (company-minimum-prefix-length 2)
   (company-idle-delay 0.0))
   :config
@@ -618,6 +622,7 @@
   :hook (company-mode . company-box-mode))
 
 (use-package company-prescient
+  :after company
   :config
   (company-prescient-mode 1))
 
@@ -625,6 +630,7 @@
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
+  :commands dap-debug
   :config
   (require 'dap-hydra)
   ;; (dap-ui-mode 1)
@@ -652,7 +658,7 @@
 )
 ;; better ivy/counsel integration with M-o
 (use-package counsel-projectile
-  :after ivy
+  :after projectile
   :config
   ;; FIXME split ivy action doesnt work on projectile-find-file cmd, because dup file paths
   ;; e.g. proj/subdir/subdir/main.py instead of proj/subdir/main.py
@@ -688,7 +694,7 @@
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 (use-package magit-todos
-  :defer t)
+  :after magit)
 
 (use-package git-link
   :commands git-link
@@ -709,6 +715,7 @@
 :config (setq vterm-max-scrollback 10000))
 
 (use-package vterm-toggle
+:commands vterm
 :config
 (setq vterm-toggle-fullscreen-p nil)
 ;; open vterm in dedicated bottom window
@@ -748,6 +755,7 @@
 
 ;; Built-in Python utilities
   (use-package python
+    :hook (python-mode . lsp-deferred)
     :custom
     (dap-python-debugger 'debugpy)
     (dap-python-executable "python3")
@@ -804,7 +812,7 @@
     :hook (python-mode . (lambda ()
                             (require 'lsp-pyright)
                             (lsp-deferred)))
-    :init
+    :config
     (when (executable-find "python3"
           (setq lsp-pyright-python-executable-cmd "python3")))
     ;; :custom
@@ -827,7 +835,8 @@
   ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
   (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 
-(use-package ein)
+(use-package ein
+:commands ein:run)
 
 (defun dot/lsp-go-before-save-hooks ()
   (add-hook 'before-save-hook #'lsp-format-buffer t t)
@@ -840,9 +849,11 @@
 (require 'dap-go)
 )
 
-(use-package terraform-mode)
+(use-package terraform-mode
+  :mode "\\.tf\\'")
 
-(use-package dockerfile-mode)
+(use-package dockerfile-mode
+  :mode "\\Dockerfile\\'")
 
 ;; (use-package elfeed
 ;; :config
@@ -900,7 +911,8 @@
     (tab-bar-new-tab)
     (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
-(use-package hydra)
+(use-package hydra
+ :defer t)
 
 (defhydra hydra-text-scale (:timeout 4)
   "scale font size"
