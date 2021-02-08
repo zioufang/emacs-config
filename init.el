@@ -83,6 +83,8 @@
 
 ;; start every frame maximized
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
+;; hide title bar
+;; (add-to-list 'default-frame-alist '(undecorated . t))
 
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
@@ -971,11 +973,11 @@
       "C-M-t" 'dot/new-named-tab
       "C-M-l" 'tab-bar-select-tab-by-name
       "C-M-k" 'tab-bar-close-tab
-      "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-      "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-      "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-      "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-    )
+      "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
+      "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
+      "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
+      "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
+   )
     ;; evil normal/visual mapping
     ;; (general-evil-setup)
     (general-define-key

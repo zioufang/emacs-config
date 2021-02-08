@@ -2,6 +2,11 @@
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el :mkdirp yes
 sym linking, for example:
 =ln -s ~/projects/emacs-config/init.el ~/.config/emacs/=
+
+Emacs daemon:
+on Mac:
+=ln -sfv /usr/local/opt/emacs-plus/homebrew.mxcl.emacs-plus@27.plist ~/Library/LaunchAgents/=
+=launchctl load ~/Library/LaunchAgents/homebrew.mxcl.emacs-plus@27.plist=
 * Basics
 =package-refresh-contents= to update package repos
 =describe-text-properties= to describe face at cursor point
@@ -93,12 +98,12 @@ install font =Cantarell=
 #+end_src
 ** Basic UI
 #+begin_src emacs-lisp
-(setq inhibit-startup-message t)
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
-(menu-bar-mode -1)            ; Disable the menu bar
-(set-fringe-mode 5)        ; Give some breathing room
+  (setq inhibit-startup-message t)
+  (scroll-bar-mode -1)        ; Disable visible scrollbar
+  (tool-bar-mode -1)          ; Disable the toolbar
+  (tooltip-mode -1)           ; Disable tooltips
+  (menu-bar-mode -1)            ; Disable the menu bar
+  (set-fringe-mode 5)        ; Give some breathing room
 #+end_src
 ** Editor Settings
 #+begin_src emacs-lisp
@@ -116,6 +121,8 @@ install font =Cantarell=
 
   ;; start every frame maximized
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  ;; hide title bar
+  ;; (add-to-list 'default-frame-alist '(undecorated . t))
 
   ;; Tab
   ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
@@ -1179,11 +1186,11 @@ useful default keybindings:
         "C-M-t" 'dot/new-named-tab
         "C-M-l" 'tab-bar-select-tab-by-name
         "C-M-k" 'tab-bar-close-tab
-        "s-1" (lambda () (interactive) (tab-bar-select-tab 1))
-        "s-2" (lambda () (interactive) (tab-bar-select-tab 2))
-        "s-3" (lambda () (interactive) (tab-bar-select-tab 3))
-        "s-4" (lambda () (interactive) (tab-bar-select-tab 4))
-      )
+        "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
+        "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
+        "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
+        "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
+     )
       ;; evil normal/visual mapping
       ;; (general-evil-setup)
       (general-define-key

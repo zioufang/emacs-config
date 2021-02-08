@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: triple_quote
+# key: ';
+# group: definitions
+# --
+\"\"\"
+$0
+\"\"\"
