@@ -921,6 +921,12 @@
     (tab-bar-new-tab)
     (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
+(defun dot/fd-projects ()
+  (interactive)
+
+  (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
+    (counsel-fzf nil "~/projects")))
+
 (use-package hydra
  :defer t)
 
@@ -955,6 +961,7 @@
       "gm"  '(vc-refresh-state :which-key "update modeline vc state")
       ;; find file ops
       "f" '(:ignore f :which-key "file commands")
+      "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
       "ff" '(counsel-projectile-find-file :which-key "project find file")
       "fF" '(counsel-find-file :which-key "find file")
       "fr" '(counsel-recentf :which-key "find recent file")
