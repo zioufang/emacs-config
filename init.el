@@ -87,6 +87,10 @@
 ;; hide title bar
 ;; (add-to-list 'default-frame-alist '(undecorated . t))
 
+;; mac title bar
+(when (equal system-type 'darwin)
+  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
 ;; Tab
 ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
 (setq-default tab-width 2)
@@ -133,12 +137,12 @@
         regexp-search-ring))
 
 ;; clipboard history, shorter for cleaner counsel-yank-pop
-(setq kill-ring-max 10)
+(setq kill-ring-max 20)
 
 ;; enable recentf
 (recentf-mode 1)
-(setq recentf-max-menu-items 25)
-(setq recentf-max-saved-items 25)
+(setq recentf-max-menu-items 50)
+(setq recentf-max-saved-items 50)
 
 ;; auto remove trailing whitespace
 (setq show-trailing-whitespace t)
@@ -387,6 +391,7 @@
   )
 
 (use-package org
+  :demand t         ;; remove this for better startup time
   :commands (org-capture org-agenda)
   :hook (org-mode . dot/org-mode-setup)
   :config
@@ -464,15 +469,18 @@
 (defun dot/org-present-prepare-slide ()
   (org-overview)
   (org-show-entry)
-  (org-show-children))
+  (org-show-all)
+  (org-display-inline-images))
 
 (defun dot/org-present-hook ()
   (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
                                      (header-line (:height 4.5) variable-pitch)
+                                     (org-code (:height 1.55) org-code)
                                      (org-verbatim (:height 1.75) org-verbatim)
                                      (org-block (:height 1.25) org-block)
                                      (org-block-begin-line (:height 0.7) org-block)))
-  (setq header-line-format " ")
+  (setq header-line-format " "
+        org-image-actual-width nil)
   (org-display-inline-images)
   (dot/org-present-prepare-slide)
   (setq-local org-appear-mode nil))
@@ -805,7 +813,8 @@
   (use-package inferior-python-mode
     :ensure nil
     :straight nil
-    :hook (inferior-python-mode . hide-mode-line-mode))
+    :hook (inferior-python-mode . hide-mode-line-mode)
+    :config (setq python-shell-prompt-detect-failure-warning nil))
 
   ;; pyright, it detects venv/.venv automatically
   (use-package lsp-pyright
@@ -892,6 +901,7 @@
     (interactive)
     (split-window-right)
     (evil-window-right 1)
+    (balance-windows)
     (dired-jump))
 
 (defun dot/kill-other-buffers ()
@@ -931,8 +941,8 @@
       :non-normal-prefix "M-SPC"
       "t" '(vterm-toggle :which-key "toggle vterm")
       "p" '(counsel-projectile-switch-project :which-key "switch project")
-      "b" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-      "B" '(ivy-switch-buffer :which-key "switch buffer")
+      "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+      "b" '(ivy-switch-buffer :which-key "switch buffer")
       "r"  '(ivy-resume :which-key "ivy resume")
       "k" '(kill-current-buffer :which-key "kill current buffer")
       "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
@@ -972,7 +982,7 @@
       "C-j" 'evil-window-down
       "C-h" 'evil-window-left
       "C-l" 'evil-window-right
-      "ZZ" '(delete-window :which-key "close window")
+      "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
     )
     ;; non-override global mapping for normal + insert state
     (general-define-key
