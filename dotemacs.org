@@ -1059,6 +1059,17 @@ run =(dap-go-setup)= once to get the vscode extension
 (use-package terraform-mode
   :mode "\\.tf\\'")
 #+end_src
+** Markdown
+Download =multimarkdown= from:
+https://fletcherpenney.net/multimarkdown/download/
+https://github.com/fletcher/MultiMarkdown-6/releases
+#+begin_src emacs-lisp
+(use-package markdown-mode
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
+#+end_src
 ** Dockerfile
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
