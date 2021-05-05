@@ -188,6 +188,9 @@ install font =Cantarell=
             (lambda ()
               (unless (eq major-mode 'markdown-mode)
                 (delete-trailing-whitespace))))
+
+  ;; case sensitive for query-replace
+  (setq case-fold-search  nil)
 #+end_src
 * UI
 ** Tab Bar
@@ -734,14 +737,14 @@ prefix key: =C-c l=
 #+end_src
 *** lsp-ui
 #+begin_src emacs-lisp
-(use-package lsp-ui
-:after lsp-mode
-:init
-(setq lsp-ui-sideline-show-diagnostics t
-      lsp-ui-sideline-show-hover nil
-      lsp-ui-sideline-show-code-actions nil
-      lsp-ui-doc-enable nil
-))
+  (use-package lsp-ui
+  :after lsp-mode
+  :init
+  (setq lsp-ui-sideline-show-diagnostics t
+        lsp-ui-sideline-show-hover nil
+        lsp-ui-sideline-show-code-actions nil
+        lsp-ui-doc-enable nil
+  ))
 #+end_src
 *** lsp-tree
 Useful functions:
@@ -1042,9 +1045,12 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 ** Go
 install =gopls=, =godef= & =delve= first
 run =(dap-go-setup)= once to get the vscode extension
+https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-lsp-mode
 #+begin_src emacs-lisp
   (defun dot/lsp-go-before-save-hooks ()
-    (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    (setq gofmt-command "goimports")
+    (add-hook 'before-save-hook 'gofmt-before-save)
     (add-hook 'before-save-hook #'lsp-organize-imports t t))
   (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
@@ -1160,111 +1166,118 @@ useful default keybindings:
 #+end_src
 ** General
 #+begin_src emacs-lisp
-    (use-package general
-      :config
-      ;; leader key overrides for all modes (e.g. dired) in normal state
-      (general-override-mode)
-      (general-define-key
-        :states '(normal emacs)
-        :keymaps 'override
-        :prefix "SPC"
-        :non-normal-prefix "M-SPC"
-        "t" '(vterm-toggle :which-key "toggle vterm")
-        "p" '(counsel-projectile-switch-project :which-key "switch project")
-        "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-        "b" '(ivy-switch-buffer :which-key "switch buffer")
-        "r"  '(ivy-resume :which-key "ivy resume")
-        "k" '(kill-current-buffer :which-key "kill current buffer")
-        "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
-        ;; magit
-        "SPC" '(magit-status :which-key "magit status")
-        "g"   '(:ignore g :which-key "magit commands")
-        "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
-        "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
-        "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
-        "gm"  '(vc-refresh-state :which-key "update modeline vc state")
-        ;; find file ops
-        "f" '(:ignore f :which-key "file commands")
-        "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
-        "ff" '(counsel-projectile-find-file :which-key "project find file")
-        "fF" '(counsel-find-file :which-key "find file")
-        "fr" '(counsel-recentf :which-key "find recent file")
-        "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-        "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
-        "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
-        ;; linting
-        "l" '(:ignore l :which-key "linting commands")
-        "ll" '(flycheck-list-errors :which-key "list errors")
-        "lj" '(flycheck-next-error :which-key "next error")
-        "lk" '(flycheck-previous-error :which-key "previous error")
-        ;; org
-        "o" '(:ignore o :which-key "org commands")
-        "oa"  '(org-agenda :which-key "agenda")
-        "oc"  '(org-capture t :which-key "capture")
-        ;; hydra
-        "h" '(:ignore h :which-key "hydra commands")
-        "hf" '(hydra-text-scale/body :which-key "scale font size")
-        )
-      ;; non leader key overrides
-      (general-define-key
-        :states '(normal visual emacs)
-        :keymaps 'override
-        "C-k" 'evil-window-up
-        "C-j" 'evil-window-down
-        "C-h" 'evil-window-left
-        "C-l" 'evil-window-right
-        "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
+  (use-package general
+    :config
+    ;; leader key overrides for all modes (e.g. dired) in normal state
+    (general-override-mode)
+    (general-define-key
+      :states '(normal emacs)
+      :keymaps 'override
+      :prefix "SPC"
+      :non-normal-prefix "M-SPC"
+      "t" '(vterm-toggle :which-key "toggle vterm")
+      "p" '(counsel-projectile-switch-project :which-key "switch project")
+      "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+      "b" '(ivy-switch-buffer :which-key "switch buffer")
+      "r"  '(ivy-resume :which-key "ivy resume")
+      "k" '(kill-current-buffer :which-key "kill current buffer")
+      ;; "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
+      ;; magit
+      "SPC" '(magit-status :which-key "magit status")
+      "g"   '(:ignore g :which-key "magit commands")
+      "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+      "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
+      "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+      "gm"  '(vc-refresh-state :which-key "update modeline vc state")
+      ;; find file ops
+      "f" '(:ignore f :which-key "file commands")
+      "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
+      "ff" '(counsel-projectile-find-file :which-key "project find file")
+      "fF" '(counsel-find-file :which-key "find file")
+      "fr" '(counsel-recentf :which-key "find recent file")
+      "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
+      "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+      "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+      ;; linting
+      "l" '(:ignore l :which-key "linting commands")
+      "ll" '(flycheck-list-errors :which-key "list errors")
+      "lj" '(flycheck-next-error :which-key "next error")
+      "lk" '(flycheck-previous-error :which-key "previous error")
+      ;; org
+      "o" '(:ignore o :which-key "org commands")
+      "oa"  '(org-agenda :which-key "agenda")
+      "oc"  '(org-capture t :which-key "capture")
+      ;; hydra
+      "h" '(:ignore h :which-key "hydra commands")
+      "hf" '(hydra-text-scale/body :which-key "scale font size")
       )
-      ;; non-override global mapping for normal + insert state
-      (general-define-key
-        :states '(normal insert visual emacs)
-        "<f12>"   'dot/toggle-maximize-buffer
-        "C-s"   'swiper
-        "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
-        "C-M-p" 'counsel-yank-pop
-        ;; tab bar
-        "C-M-t" 'dot/new-named-tab
-        "C-M-l" 'tab-bar-select-tab-by-name
-        "C-M-k" 'tab-bar-close-tab
-        "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
-        "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
-        "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
-        "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
-     )
-      ;; evil normal/visual mapping
-      ;; (general-evil-setup)
-      (general-define-key
-        :states '(normal visual)
-        "s" 'avy-goto-char-2-below
-        "S" 'avy-goto-char-2-above
-        "gl" 'avy-goto-line
-        "gw" 'avy-goto-word-1
-        "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
-        "-" 'dired-jump
-        "_" 'dot/split-dired-jump)
-      ;; org-mod
-      (general-define-key
-        :states 'normal
-        :keymaps 'org-mode-map
-        "K" 'org-up-element
-      )
-      ;; dired-mod
-      (general-define-key
-        :states  'normal
-        :keymaps 'dired-mode-map
-        ;; reuse dired buffer
-        "RET"    'dired-find-alternate-file
-        "-"      (lambda () (interactive) (find-alternate-file ".."))
-      )
-      ;; yasnippet
-      ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
-      (general-define-key
-        :states '(insert)
-        :keymaps 'yas-minor-mode-map
-        "M-TAB" #'yas-expand
-        "SPC" yas-maybe-expand
-      )
-  )
+    ;; non leader key overrides
+    (general-define-key
+      :states '(normal visual emacs)
+      :keymaps 'override
+      "C-k" 'evil-window-up
+      "C-j" 'evil-window-down
+      "C-h" 'evil-window-left
+      "C-l" 'evil-window-right
+      "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
+    )
+    ;; non-override global mapping for normal + insert state
+    (general-define-key
+      :states '(normal insert visual emacs)
+      "<f12>"   'dot/toggle-maximize-buffer
+      "C-s"   'swiper
+      "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
+      "C-M-p" 'counsel-yank-pop
+      ;; tab bar
+      "C-M-t" 'dot/new-named-tab
+      "C-M-l" 'tab-bar-select-tab-by-name
+      "C-M-k" 'tab-bar-close-tab
+      "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
+      "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
+      "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
+      "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
+    )
+    ;; evil normal/visual mapping
+    ;; (general-evil-setup)
+    (general-define-key
+      :states '(normal visual)
+      "s" 'avy-goto-char-2-below
+      "S" 'avy-goto-char-2-above
+      "gl" 'avy-goto-line
+      "gw" 'avy-goto-word-1
+      "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
+      "-" 'dired-jump
+      "_" 'dot/split-dired-jump)
+    ;; org-mod
+    (general-define-key
+      :states 'normal
+      :keymaps 'org-mode-map
+      "K" 'org-up-element
+    )
+    ;; dired-mod
+    (general-define-key
+      :states  'normal
+      :keymaps 'dired-mode-map
+      ;; reuse dired buffer
+      "RET"    'dired-find-alternate-file
+      "-"      (lambda () (interactive) (find-alternate-file ".."))
+    )
+    ;; vterm-mod
+    (general-define-key
+      :states  'insert
+      :keymaps 'vterm-mode-map
+      "C-c"    'vterm-send-C-c
+    )
+
+    ;; yasnippet
+    ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
+    (general-define-key
+      :states '(insert)
+      :keymaps 'yas-minor-mode-map
+      "M-TAB" #'yas-expand
+      "SPC" yas-maybe-expand
+    )
+)
 #+end_src
 * Todos
 ** daemon

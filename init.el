@@ -151,6 +151,9 @@
             (unless (eq major-mode 'markdown-mode)
               (delete-trailing-whitespace))))
 
+;; case sensitive for query-replace
+(setq case-fold-search  nil)
+
 (setq tab-bar-new-tab-to `rightmost
       tab-bar-show t
       ;; tab-bar-new-tab-choice "~/projects"
@@ -848,7 +851,9 @@
 :commands ein:run)
 
 (defun dot/lsp-go-before-save-hooks ()
-  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (setq gofmt-command "goimports")
+  (add-hook 'before-save-hook 'gofmt-before-save)
   (add-hook 'before-save-hook #'lsp-organize-imports t t))
 (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
@@ -957,7 +962,7 @@
       "b" '(ivy-switch-buffer :which-key "switch buffer")
       "r"  '(ivy-resume :which-key "ivy resume")
       "k" '(kill-current-buffer :which-key "kill current buffer")
-      "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
+      ;; "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
       ;; magit
       "SPC" '(magit-status :which-key "magit status")
       "g"   '(:ignore g :which-key "magit commands")
@@ -1012,7 +1017,7 @@
       "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
       "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
       "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
-   )
+    )
     ;; evil normal/visual mapping
     ;; (general-evil-setup)
     (general-define-key
@@ -1038,6 +1043,13 @@
       "RET"    'dired-find-alternate-file
       "-"      (lambda () (interactive) (find-alternate-file ".."))
     )
+    ;; vterm-mod
+    (general-define-key
+      :states  'insert
+      :keymaps 'vterm-mode-map
+      "C-c"    'vterm-send-C-c
+    )
+
     ;; yasnippet
     ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
     (general-define-key

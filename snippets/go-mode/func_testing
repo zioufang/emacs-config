@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: function_testing
+# key: ft;
+# --
+func Test${1:func_name}(t *testing.T) {
+  $0
+}
