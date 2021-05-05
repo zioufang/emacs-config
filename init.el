@@ -18,6 +18,12 @@
 ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
 (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
+(setq comp-speed 2)
+(setq comp-async-report-warnings-errors nil)
+(when (boundp 'comp-eln-load-path)
+  (setcar comp-eln-load-path
+          (expand-file-name "eln-cache/" user-emacs-directory)))
+
 ;; Initialize package sources
 (require 'package)
 (setq package-enable-at-startup nil)

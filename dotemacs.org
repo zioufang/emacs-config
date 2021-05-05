@@ -39,6 +39,14 @@ debug errored out config:
   ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+end_src
+** Native Comp
+#+begin_src emacs-lisp
+(setq comp-speed 2)
+(setq comp-async-report-warnings-errors nil)
+(when (boundp 'comp-eln-load-path)
+  (setcar comp-eln-load-path
+          (expand-file-name "eln-cache/" user-emacs-directory)))
+#+end_src
 ** Package Manager
 *** package
 #+begin_src emacs-lisp
@@ -1038,7 +1046,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
     (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 #+end_src
 *** ipython notebook
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp tangle: no
   (use-package ein
   :commands ein:run)
 #+end_src
