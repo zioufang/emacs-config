@@ -885,58 +885,71 @@
 ;; ))
 
 (defun dot/go-to-dotemacs ()
-    "Go To Emacs Config File"
+      "Go To Emacs Config File"
+      (interactive)
+      (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
+
+  (defun dot/toggle-frame ()
+      "
+      Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+      Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+      "
+      (interactive)
+      (if (eq (length (visible-frame-list)) 1)
+          (make-frame)
+          (delete-frame)))
+
+  (defun dot/toggle-maximize-buffer () "Maximize buffer"
     (interactive)
-    (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
+    (if (= 1 (length (window-list)))
+        (jump-to-register '_)
+      (progn
+        (window-configuration-to-register '_)
+        (delete-other-windows))))
 
-(defun dot/toggle-frame ()
-    "
-    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-    "
+  (defun dot/split-dired-jump ()
+      "Split left dired jump"
+      (interactive)
+      (split-window-right)
+      (evil-window-right 1)
+      (balance-windows)
+      (dired-jump))
+
+  (defun dot/kill-other-buffers ()
+    "Kill all other buffers."
     (interactive)
-    (if (eq (length (visible-frame-list)) 1)
-        (make-frame)
-        (delete-frame)))
+    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
-(defun dot/toggle-maximize-buffer () "Maximize buffer"
-  (interactive)
-  (if (= 1 (length (window-list)))
-      (jump-to-register '_)
-    (progn
-      (window-configuration-to-register '_)
-      (delete-other-windows))))
-
-(defun dot/split-dired-jump ()
-    "Split left dired jump"
+  (defun dot/refresh-projectile-mode ()
+    "Turn projectile off and on to refresh"
     (interactive)
-    (split-window-right)
-    (evil-window-right 1)
-    (balance-windows)
-    (dired-jump))
+    (projectile-mode -1)
+    (projectile-mode))
 
-(defun dot/kill-other-buffers ()
-  "Kill all other buffers."
-  (interactive)
-  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+  (defun dot/new-named-tab (name)
+      "Create a new tab with name inputs, prefixed by its index"
+      (interactive "MNew Tab Name: ")
+      (tab-bar-new-tab)
+      (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
-(defun dot/refresh-projectile-mode ()
-  "Turn projectile off and on to refresh"
-  (interactive)
-  (projectile-mode -1)
-  (projectile-mode))
+  (defun dot/fd-projects ()
+    (interactive)
 
-(defun dot/new-named-tab (name)
-    "Create a new tab with name inputs, prefixed by its index"
-    (interactive "MNew Tab Name: ")
-    (tab-bar-new-tab)
-    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+    (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
+      (counsel-fzf nil "~/projects")))
 
-(defun dot/fd-projects ()
-  (interactive)
-
-  (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
-    (counsel-fzf nil "~/projects")))
+  (defun dot/straight-freeze-then-backup ()
+    (interactive)
+    (straight-freeze-versions)
+    (delete-file "~/projects/emacs-config/default.el")
+    (copy-file "~/.config/emacs/straight/versions/default.el" "~/projects/emacs-config/default.el")
+)
+  (defun dot/straight-thaw-from-backup ()
+    (interactive)
+    (delete-file "~/.config/emacs/straight/versions/default.el")
+    (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
+    (straight-thaw-versions)
+)
 
 (use-package hydra
  :defer t)
