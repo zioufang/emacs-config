@@ -3,18 +3,21 @@
 sym linking, for example:
 =ln -s ~/projects/emacs-config/init.el ~/.config/emacs/=
 
-Emacs daemon:
-on Mac:
-=ln -sfv /usr/local/opt/emacs-plus/homebrew.mxcl.emacs-plus@27.plist ~/Library/LaunchAgents/=
-=launchctl load ~/Library/LaunchAgents/homebrew.mxcl.emacs-plus@27.plist=
 * Basics
+Mac:
+Install
+=brew install emacs-plus@28 --with-native-comp --with-no-titlebar=
+daemon:
+=ln -sfv /usr/local/opt/emacs-plus/homebrew.mxcl.emacs-plus@28.plist ~/Library/LaunchAgents/=
+=launchctl load ~/Library/LaunchAgents/homebrew.mxcl.emacs-plus@28.plist=
+
+tips:
 =package-refresh-contents= to update package repos
 =describe-text-properties= to describe face at cursor point
 =apropos= to regex search all emacs symbol
 =describe-key= to describe the behaviour/func of the pressed keys
 
 debug errored out config:
-- =C-g= to get out of anything
 - =delete-window= to close window
 - =check-parens= for paren syntax error in elisp
 ** Startup Tricks
