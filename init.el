@@ -891,70 +891,83 @@
 ;; ))
 
 (defun dot/go-to-dotemacs ()
-      "Go To Emacs Config File"
+        "Go To Emacs Config File"
+        (interactive)
+        (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
+
+    (defun dot/toggle-frame ()
+        "
+        Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+        Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+        "
+        (interactive)
+        (if (eq (length (visible-frame-list)) 1)
+            (make-frame)
+            (delete-frame)))
+
+    (defun dot/toggle-maximize-buffer () "Maximize buffer"
       (interactive)
-      (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
+      (if (= 1 (length (window-list)))
+          (jump-to-register '_)
+        (progn
+          (window-configuration-to-register '_)
+          (delete-other-windows))))
 
-  (defun dot/toggle-frame ()
-      "
-      Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-      Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-      "
+    (defun dot/split-dired-jump ()
+        "Split left dired jump"
+        (interactive)
+        (split-window-right)
+        (evil-window-right 1)
+        (balance-windows)
+        (dired-jump))
+
+    (defun dot/kill-other-prog-buffers ()
+      "Kill all other buffers."
       (interactive)
-      (if (eq (length (visible-frame-list)) 1)
-          (make-frame)
-          (delete-frame)))
+      (save-excursion
+        (let ((count 0))
+          (dolist (buffer (delq (current-buffer) (buffer-list)))
+            (set-buffer buffer)
+            (when (not (equal major-mode 'fundamental-mode))
+              (setq count (1+ count))
+              (kill-buffer buffer)))
+          (message "Killed %i prog buffer(s)." count)))
+    )
 
-  (defun dot/toggle-maximize-buffer () "Maximize buffer"
-    (interactive)
-    (if (= 1 (length (window-list)))
-        (jump-to-register '_)
-      (progn
-        (window-configuration-to-register '_)
-        (delete-other-windows))))
-
-  (defun dot/split-dired-jump ()
-      "Split left dired jump"
+    (defun dot/refresh-projectile-mode ()
+      "Turn projectile off and on to refresh"
       (interactive)
-      (split-window-right)
-      (evil-window-right 1)
-      (balance-windows)
-      (dired-jump))
+      (projectile-mode -1)
+      (projectile-mode))
 
-  (defun dot/kill-other-buffers ()
-    "Kill all other buffers."
-    (interactive)
-    (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+    (defun dot/new-named-tab (name)
+        "Create a new tab with name inputs, prefixed by its index"
+        (interactive "MNew Tab Name: ")
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
-  (defun dot/refresh-projectile-mode ()
-    "Turn projectile off and on to refresh"
-    (interactive)
-    (projectile-mode -1)
-    (projectile-mode))
+    (defun dot/fd-projects ()
+      (interactive)
 
-  (defun dot/new-named-tab (name)
-      "Create a new tab with name inputs, prefixed by its index"
-      (interactive "MNew Tab Name: ")
-      (tab-bar-new-tab)
-      (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+      (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
+        (counsel-fzf nil "~/projects")))
 
-  (defun dot/fd-projects ()
-    (interactive)
-
-    (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
-      (counsel-fzf nil "~/projects")))
-
-  (defun dot/straight-freeze-then-backup ()
-    (interactive)
-    (straight-freeze-versions)
-    (delete-file "~/projects/emacs-config/default.el")
-    (copy-file "~/.config/emacs/straight/versions/default.el" "~/projects/emacs-config/default.el")
-)
-  (defun dot/straight-thaw-from-backup ()
-    (interactive)
-    (delete-file "~/.config/emacs/straight/versions/default.el")
-    (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
-    (straight-thaw-versions)
+    (defun dot/straight-freeze-then-backup ()
+      (interactive)
+      (straight-freeze-versions)
+      (delete-file "~/projects/emacs-config/default.el")
+      (copy-file "~/.config/emacs/straight/versions/default.el" "~/projects/emacs-config/default.el")
+  )
+    (defun dot/straight-thaw-from-backup ()
+      (interactive)
+      (delete-file "~/.config/emacs/straight/versions/default.el")
+      (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
+      (straight-thaw-versions)
+  )
+(defun dot/switch-buffer ()
+(interactive)
+(let ((ivy-ignore-buffers '("^\*" "magit*")))
+  (ivy-switch-buffer))
 )
 
 (use-package hydra
@@ -967,114 +980,114 @@
   ("q" nil "quit" :exit t))
 
 (use-package general
-    :config
-    ;; leader key overrides for all modes (e.g. dired) in normal state
-    (general-override-mode)
-    (general-define-key
-      :states '(normal emacs)
-      :keymaps 'override
-      :prefix "SPC"
-      :non-normal-prefix "M-SPC"
-      "t" '(vterm-toggle :which-key "toggle vterm")
-      "p" '(counsel-projectile-switch-project :which-key "switch project")
-      "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-      "b" '(ivy-switch-buffer :which-key "switch buffer")
-      "r"  '(ivy-resume :which-key "ivy resume")
-      "k" '(kill-current-buffer :which-key "kill current buffer")
-      ;; "K" '(dot/kill-other-buffers :which-key "kill buffers except current")
-      ;; magit
-      "SPC" '(magit-status :which-key "magit status")
-      "g"   '(:ignore g :which-key "magit commands")
-      "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
-      "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
-      "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
-      "gm"  '(vc-refresh-state :which-key "update modeline vc state")
-      ;; find file ops
-      "f" '(:ignore f :which-key "file commands")
-      "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
-      "ff" '(counsel-projectile-find-file :which-key "project find file")
-      "fF" '(counsel-find-file :which-key "find file")
-      "fr" '(counsel-recentf :which-key "find recent file")
-      "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-      "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
-      "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
-      ;; linting
-      "l" '(:ignore l :which-key "linting commands")
-      "ll" '(flycheck-list-errors :which-key "list errors")
-      "lj" '(flycheck-next-error :which-key "next error")
-      "lk" '(flycheck-previous-error :which-key "previous error")
-      ;; org
-      "o" '(:ignore o :which-key "org commands")
-      "oa"  '(org-agenda :which-key "agenda")
-      "oc"  '(org-capture t :which-key "capture")
-      ;; hydra
-      "h" '(:ignore h :which-key "hydra commands")
-      "hf" '(hydra-text-scale/body :which-key "scale font size")
-      )
-    ;; non leader key overrides
-    (general-define-key
-      :states '(normal visual emacs)
-      :keymaps 'override
-      "C-k" 'evil-window-up
-      "C-j" 'evil-window-down
-      "C-h" 'evil-window-left
-      "C-l" 'evil-window-right
-      "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
+  :config
+  ;; leader key overrides for all modes (e.g. dired) in normal state
+  (general-override-mode)
+  (general-define-key
+    :states '(normal emacs)
+    :keymaps 'override
+    :prefix "SPC"
+    :non-normal-prefix "M-SPC"
+    "t" '(vterm-toggle :which-key "toggle vterm")
+    "p" '(counsel-projectile-switch-project :which-key "switch project")
+    "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
+    "b" '(dot/switch-buffer :which-key "switch buffer")
+    "r" '(ivy-resume :which-key "ivy resume")
+    "k" '(kill-current-buffer :which-key "kill current buffer")
+    "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
+    ;; magit
+    "SPC" '(magit-status :which-key "magit status")
+    "g"   '(:ignore g :which-key "magit commands")
+    "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+    "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
+    "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+    "gm"  '(vc-refresh-state :which-key "update modeline vc state")
+    ;; find file ops
+    "f" '(:ignore f :which-key "file commands")
+    "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
+    "ff" '(counsel-projectile-find-file :which-key "project find file")
+    "fF" '(counsel-find-file :which-key "find file")
+    "fr" '(counsel-recentf :which-key "find recent file")
+    "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
+    "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+    "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+    ;; linting
+    "l" '(:ignore l :which-key "linting commands")
+    "ll" '(flycheck-list-errors :which-key "list errors")
+    "lj" '(flycheck-next-error :which-key "next error")
+    "lk" '(flycheck-previous-error :which-key "previous error")
+    ;; org
+    "o" '(:ignore o :which-key "org commands")
+    "oa"  '(org-agenda :which-key "agenda")
+    "oc"  '(org-capture t :which-key "capture")
+    ;; hydra
+    "h" '(:ignore h :which-key "hydra commands")
+    "hf" '(hydra-text-scale/body :which-key "scale font size")
     )
-    ;; non-override global mapping for normal + insert state
-    (general-define-key
-      :states '(normal insert visual emacs)
-      "<f12>"   'dot/toggle-maximize-buffer
-      "C-s"   'swiper
-      "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
-      "C-M-p" 'counsel-yank-pop
-      ;; tab bar
-      "C-M-t" 'dot/new-named-tab
-      "C-M-l" 'tab-bar-select-tab-by-name
-      "C-M-k" 'tab-bar-close-tab
-      "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
-      "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
-      "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
-      "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
-    )
-    ;; evil normal/visual mapping
-    ;; (general-evil-setup)
-    (general-define-key
-      :states '(normal visual)
-      "s" 'avy-goto-char-2-below
-      "S" 'avy-goto-char-2-above
-      "gl" 'avy-goto-line
-      "gw" 'avy-goto-word-1
-      "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
-      "-" 'dired-jump
-      "_" 'dot/split-dired-jump)
-    ;; org-mod
-    (general-define-key
-      :states 'normal
-      :keymaps 'org-mode-map
-      "K" 'org-up-element
-    )
-    ;; dired-mod
-    (general-define-key
-      :states  'normal
-      :keymaps 'dired-mode-map
-      ;; reuse dired buffer
-      "RET"    'dired-find-alternate-file
-      "-"      (lambda () (interactive) (find-alternate-file ".."))
-    )
-    ;; vterm-mod
-    (general-define-key
-      :states  'insert
-      :keymaps 'vterm-mode-map
-      "C-c"    'vterm-send-C-c
-    )
+  ;; non leader key overrides
+  (general-define-key
+    :states '(normal visual emacs)
+    :keymaps 'override
+    "C-k" 'evil-window-up
+    "C-j" 'evil-window-down
+    "C-h" 'evil-window-left
+    "C-l" 'evil-window-right
+    "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
+  )
+  ;; non-override global mapping for normal + insert state
+  (general-define-key
+    :states '(normal insert visual emacs)
+    "<f12>"   'dot/toggle-maximize-buffer
+    "C-s"   'swiper
+    "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
+    "C-M-p" 'counsel-yank-pop
+    ;; tab bar
+    "C-M-t" 'dot/new-named-tab
+    "C-M-l" 'tab-bar-select-tab-by-name
+    "C-M-k" 'tab-bar-close-tab
+    "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
+    "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
+    "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
+    "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
+  )
+  ;; evil normal/visual mapping
+  ;; (general-evil-setup)
+  (general-define-key
+    :states '(normal visual)
+    "s" 'avy-goto-char-2-below
+    "S" 'avy-goto-char-2-above
+    "gl" 'avy-goto-line
+    "gw" 'avy-goto-word-1
+    "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
+    "-" 'dired-jump
+    "_" 'dot/split-dired-jump)
+  ;; org-mod
+  (general-define-key
+    :states 'normal
+    :keymaps 'org-mode-map
+    "K" 'org-up-element
+  )
+  ;; dired-mod
+  (general-define-key
+    :states  'normal
+    :keymaps 'dired-mode-map
+    ;; reuse dired buffer
+    "RET"    'dired-find-alternate-file
+    "-"      (lambda () (interactive) (find-alternate-file ".."))
+  )
+  ;; vterm-mod
+  (general-define-key
+    :states  'insert
+    :keymaps 'vterm-mode-map
+    "C-c"    'vterm-send-C-c
+  )
 
-    ;; yasnippet
-    ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
-    (general-define-key
-      :states '(insert)
-      :keymaps 'yas-minor-mode-map
-      "M-TAB" #'yas-expand
-      "SPC" yas-maybe-expand
-    )
+  ;; yasnippet
+  ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
+  (general-define-key
+    :states '(insert)
+    :keymaps 'yas-minor-mode-map
+    "M-TAB" #'yas-expand
+    "SPC" yas-maybe-expand
+  )
 )
