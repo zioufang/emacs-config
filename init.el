@@ -733,6 +733,7 @@
 
 (use-package vterm-toggle
 :commands vterm
+:custom (vterm-toggle-scope 'frame)
 :config
 (setq vterm-toggle-fullscreen-p nil)
 ;; open vterm in dedicated bottom window

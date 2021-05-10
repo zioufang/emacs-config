@@ -917,6 +917,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 
   (use-package vterm-toggle
   :commands vterm
+  :custom (vterm-toggle-scope 'frame)
   :config
   (setq vterm-toggle-fullscreen-p nil)
   ;; open vterm in dedicated bottom window
