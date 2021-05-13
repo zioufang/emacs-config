@@ -263,142 +263,88 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
     (evil-collection-define-key 'normal 'dired-mode-map
       "gh" 'dired-hide-dotfiles-mode))
 #+end_src
-** Ivy & Counsel
-project-wide search and replace workflow:
-- =counsel-rg=
-- =C-c C-o= brings the searches to a =ivy-occur= window
-- =ivy-occur= works on minibuffer, e.g. can bring up =ivy-switch-buffer= window, mark with =m= then =D= to delete
-- TODO? use =ivy-posframe= to configure the position
+** Orderless
 #+begin_src emacs-lisp
-  (defun dot/find-file-right (filename)
+(use-package orderless
+  :custom (completion-styles '(orderless)))
+#+end_src
+** Selectrum
+#+begin_src emacs-lisp
+(use-package selectrum :init (selectrum-mode +1))
+#+end_src
+** Prescient
+#+begin_src emacs-lisp
+(use-package prescient :config (prescient-persist-mode +1))
+(use-package selectrum-prescient :init (selectrum-prescient-mode +1) :after selectrum)
+(use-package company-prescient :init (company-prescient-mode +1) :after company)
+#+end_src
+** Consult
+#+begin_src emacs-lisp
+(use-package consult
+  :demand t
+  :after projectile
+  :config
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
+  (setq consult-preview-key nil)
+  (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
+  :custom
+  ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
+  (consult-buffer-filter '("^\*" "\\` " "magit*"))
+  (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
+)
+
+#+end_src
+** Embark (no tangle, crashing with native comp)
+#+begin_src emacs-lisp :tangle no
+  (defun embark-act-noquit ()
+    "Run action but don't quit the minibuffer afterwards."
     (interactive)
+    (let ((embark-quit-after-action nil))
+      (embark-act)))
+
+  (defun dot/message-var (var)
+  (message "Var: %s" var)
+  )
+
+  ;; DOES NOT work
+  (defun dot/open-right (filename)
+    (interactive "MFilename: ")
     (split-window-right)
     (other-window 1)
     (balance-windows)
-    (find-file filename))
-  (defun dot/find-file-below (filename)
-    (interactive)
-    (split-window-below)
-    (other-window 1)
-    (balance-windows)
-    (find-file filename))
-  (defun dot/set-ivy-action-split-find-file (ivy-func)
-    (ivy-add-actions
-      ivy-func
-      '(("v" dot/find-file-right "open right")
-      ("s" dot/find-file-below "open below")))
-  )
-  (use-package ivy
-    :diminish
-    :bind (
-           :map ivy-minibuffer-map
-           ("C-j" . ivy-next-line)
-           ("C-k" . ivy-previous-line)
-           :map ivy-switch-buffer-map
-           ("C-k" . ivy-previous-line)
-           ("C-d" . ivy-switch-buffer-kill)
-           :map ivy-reverse-i-search-map
-           ("C-k" . ivy-previous-line)
-           ("C-r" . ivy-reverse-i-search-kill))
-    :config
-    (setq ivy-initial-inputs-alist nil)    ;; remove ^
-    (setq ivy-extra-directories nil) ;; remove ./.. from dir
-    (define-key ivy-minibuffer-map (kbd "TAB") 'ivy-alt-done) ;; single tab completion (was double)
-    (dolist (ivy-func
-    '(ivy-switch-buffer))
-    (dot/set-ivy-action-split-find-file ivy-func))
-    (ivy-mode 1))
+    (find-file filename)
+    )
 
-  (use-package counsel
-    :after ivy
-    :bind (("M-x" . counsel-M-x)
-           :map minibuffer-local-map
-           ("C-r" . 'counsel-minibuffer-history))
-    :config
-    (dolist (ivy-func
-    '(counsel-find-file
-      counsel-recentf))
-    (dot/set-ivy-action-split-find-file ivy-func)))
-
-  (use-package ivy-rich
-    :after ivy
-    :config
-    (ivy-rich-mode 1))
-
-  ;; better M-x, provide frequent items at the top
-  (use-package amx
-    :after ivy
-    :custom
-    (amx-backend 'auto)
-    (amx-save-file "~/.config/emacs/amx-hist")
-    (amx-history-length 100)
-    (amx-show-key-bindings nil)
-    :config
-    (amx-mode 1))
-
-  ;; unmaintained, still looking for maintainer
-  ;; (use-package ivy-prescient
-  ;;   :after counsel
-  ;;   :config
-  ;;   (ivy-prescient-mode 1)
-  ;;   (prescient-persist-mode 1)
-  ;;   (setq prescient-sort-length-enable nil))
-
-  ;; better help for counsel
-  (use-package helpful
-    :after ivy
-    :custom
-    (counsel-describe-function-function #'helpful-callable)
-    (counsel-describe-variable-function #'helpful-variable)
+  (use-package embark
+    :after selectrum
     :bind
-    ([remap describe-function] . counsel-describe-function)
-    ([remap describe-command] . helpful-command)
-    ([remap describe-variable] . counsel-describe-variable)
-    ([remap describe-key] . helpful-key))
-#+end_src
-*** useful niche shortcuts
-- =C-M-m=: run command and keep minibuffer open
-** Bufler (disabled)
-#+begin_src emacs-lisp
-  (use-package bufler
-    :disabled
-    :bind (("C-M-j" . bufler-switch-buffer)
-           ("C-M-k" . bufler-workspace-frame-set))
+    (:map minibuffer-local-map
+    (("C-c" . embark-act)
+     ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
+      :map embark-general-map
+      ("C-v" . dot/message-var)
+  ))
+    :init
+    ;; Optionally replace the key help with a completing-read interface
+    (setq prefix-help-command #'embark-prefix-help-command)
+    (setq embark-action-indicator
+      (lambda (map _target)
+        (which-key--show-keymap "Embark" map nil nil 'no-paging)
+        #'which-key--hide-popup-ignore-command)
+      embark-become-indicator embark-action-indicator)
     :config
-    (evil-collection-define-key 'normal 'bufler-list-mode-map
-      (kbd "RET")   'bufler-list-buffer-switch
-      (kbd "M-RET") 'bufler-list-buffer-peek
-      "d"           'bufler-list-buffer-kill)
-
-    (setf bufler-groups
-          (bufler-defgroups
-            ;; Subgroup collecting all named workspaces.
-            (group (auto-workspace))
-            ;; Subgroup collecting buffers in a projectile project.
-            (group (auto-projectile))
-            ;; Grouping browser windows
-            (group
-             ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
-             (group-or "Help/Info"
-                       (mode-match "*Help*" (rx bos (or "help-" "helpful-")))
-                       ;; (mode-match "*Helpful*" (rx bos "helpful-"))
-                       (mode-match "*Info*" (rx bos "info-"))))
-            (group
-             ;; Subgroup collecting all special buffers (i.e. ones that are not
-             ;; file-backed), except `magit-status-mode' & `dired' buffers (which are allowed to fall
-             ;; through to other groups, so they end up grouped with their project buffers).
-             (group-and "*Special*"
-                        (name-match "**Special**"
-                                    (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace" "Pinentry") "*"))
-                        (lambda (buffer)
-                          (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
-                                               buffer)
-                                      (funcall (mode-match "Dired" (rx bos "dired"))
-                                               buffer)
-                                      (funcall (auto-file) buffer))
-                            "*Special*"))))
-            ;; Group remaining buffers by major mode.
-            (auto-mode))))
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none)))))
+#+end_src
+** Marginalia
+#+begin_src emacs-lisp
+(use-package marginalia
+  :config
+  (marginalia-mode))
 #+end_src
 ** Theme
 #+begin_src emacs-lisp
@@ -763,15 +709,6 @@ Useful functions:
 (use-package lsp-treemacs
   :after lsp-mode)
 #+end_src
-*** lsp-ivy
-Useful functions:
-- =lsp-ivy-workspace-symbol=
-- =lsp-ivy-global-workspace-symbol=
- #+begin_src emacs-lisp
-  (use-package lsp-ivy
-  :after lsp-mode)
- #+end_src
-
 *** breadcrumb on top (disabled)
 #+begin_src emacs-lisp :tangle no
 (defun dot/lsp-mode-setup ()
@@ -830,30 +767,17 @@ Prefix key: =C-c p=
 #+begin_src emacs-lisp
   ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
   (use-package projectile
+    :demand t
     :diminish projectile-mode
     :config
     (projectile-mode)
     (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
-    :custom ((projectile-completion-system 'ivy))
     :bind-keymap ("C-c p" . projectile-command-map)
     :init
     ;; NOTE: Set this to the folder where you keep your Git repos!
     (when (file-directory-p "~/projects")
       (setq projectile-project-search-path '("~/projects")))
-    (setq projectile-switch-project-action #'projectile-dired)
   )
-  ;; better ivy/counsel integration with M-o
-  (use-package counsel-projectile
-    :after projectile
-    :config
-    ;; FIXME split ivy action doesnt work on projectile-find-file cmd, because dup file paths
-    ;; e.g. proj/subdir/subdir/main.py instead of proj/subdir/main.py
-      (dolist (ivy-func
-      '(counsel-projectile-find-file
-        counsel-projectile-switch-to-buffer))
-      (dot/set-ivy-action-split-find-file ivy-func))
-    (counsel-projectile-mode))
-  ;; term emulator, needs CMAKE to compile
 #+end_src
 ** Git
 *** Magit
@@ -861,22 +785,8 @@ evil keybindings:
 https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 - === decrease context and =+= to increase context around the hunk
 #+begin_src emacs-lisp
-  (defun dot/update-vc ()
-    "Update vc in all verson-controlled buffers when magit refreshes.
-     Big drag on performance."
-    ;; (dolist (buf (buffer-list))
-    (require 'counsel-projectile)
-    (dolist (buf (counsel-projectile--project-buffers))
-      (with-current-buffer buf
-        (vc-refresh-state))))
-
   (use-package magit
     ;; enter opens file in the other window
-    ;; :config
-    ;; (advice-add 'magit-checkout-revision :after 'dot/update-vc '((name . "magit-refresh-on-checkout-revision")))
-    ;; (advice-add 'magit-branch-create :after 'dot/update-vc '((name . "magit-refresh-on-branch-ckkate")))
-    ;; (advice-add 'magit-branch-and-checkout :after 'dot/update-vc '((name .  "magit-refresh-on-checkout-and-branch")))
-    ;; (advice-add 'magit-branch-or-checkout :after 'dot/update-vc '((name .  "magit-refresh-on-branch-or-checkout")))`
     :bind (:map magit-file-section-map
            ("RET" . magit-diff-visit-file-other-window)
            :map magit-hunk-section-map
@@ -1046,7 +956,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
     ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
     (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 #+end_src
-*** ipython notebook
+*** ipython notebook (no tangle)
 #+begin_src emacs-lisp tangle: no
   (use-package ein
   :commands ein:run)
@@ -1164,12 +1074,6 @@ useful default keybindings:
           (tab-bar-new-tab)
           (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
-      (defun dot/fd-projects ()
-        (interactive)
-
-        (let ((counsel-fzf-cmd "fd -t f -t l -H -E '*/vendor/*' -E '*/.git/*' --base-directory ~/projects | fzf -f \"%s\""))
-          (counsel-fzf nil "~/projects")))
-
       (defun dot/straight-freeze-then-backup ()
         (interactive)
         (straight-freeze-versions)
@@ -1182,11 +1086,6 @@ useful default keybindings:
         (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
         (straight-thaw-versions)
     )
-  (defun dot/switch-buffer ()
-  (interactive)
-  (let ((ivy-ignore-buffers '("^\*" "magit*")))
-    (ivy-switch-buffer))
-  )
 #+end_src
 ** Hydra
 #+begin_src emacs-lisp
@@ -1211,10 +1110,8 @@ useful default keybindings:
       :prefix "SPC"
       :non-normal-prefix "M-SPC"
       "t" '(vterm-toggle :which-key "toggle vterm")
-      "p" '(counsel-projectile-switch-project :which-key "switch project")
-      "B" '(counsel-projectile-switch-to-buffer :which-key "project switch buffer")
-      "b" '(dot/switch-buffer :which-key "switch buffer")
-      "r" '(ivy-resume :which-key "ivy resume")
+      "p" '(projectile-switch-project :which-key "switch project")
+      "b" '(consult-buffer :which-key "switch buffer")
       "k" '(kill-current-buffer :which-key "kill current buffer")
       "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
       ;; magit
@@ -1226,13 +1123,10 @@ useful default keybindings:
       "gm"  '(vc-refresh-state :which-key "update modeline vc state")
       ;; find file ops
       "f" '(:ignore f :which-key "file commands")
-      "fd" '(dot/fd-projects :which-key "fd files in ~/projects")
-      "ff" '(counsel-projectile-find-file :which-key "project find file")
-      "fF" '(counsel-find-file :which-key "find file")
-      "fr" '(counsel-recentf :which-key "find recent file")
-      "fo" '((lambda () (interactive) (counsel-find-file "~/projects/org")) :which-key "find org file")
-      "fp" '((lambda () (interactive) (counsel-find-file "~/projects/")) :which-key "find file in projects")
+      "fd" '(projectile-find-file-in-known-projects :which-key "fd files ~/projects")
       "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+      "fr" '(consult-recent-file :which-key "find recent files")
+      "ff" '(projectile-find-file :which-key "find project files")
       ;; linting
       "l" '(:ignore l :which-key "linting commands")
       "ll" '(flycheck-list-errors :which-key "list errors")
@@ -1260,17 +1154,11 @@ useful default keybindings:
     (general-define-key
       :states '(normal insert visual emacs)
       "<f12>"   'dot/toggle-maximize-buffer
-      "C-s"   'swiper
-      "C-M-r" '(counsel-projectile-rg :which-key "ripgrep")
-      "C-M-p" 'counsel-yank-pop
-      ;; tab bar
-      "C-M-t" 'dot/new-named-tab
-      "C-M-l" 'tab-bar-select-tab-by-name
-      "C-M-k" 'tab-bar-close-tab
-      "C-M-1" (lambda () (interactive) (tab-bar-select-tab 1))
-      "C-M-2" (lambda () (interactive) (tab-bar-select-tab 2))
-      "C-M-3" (lambda () (interactive) (tab-bar-select-tab 3))
-      "C-M-4" (lambda () (interactive) (tab-bar-select-tab 4))
+      "C-s"   'consult-line
+      "C-S-s" 'consult-outline
+      "C-M-p" 'consult-yank-replace
+      "C-M-r" '(consult-ripgrep :which-key "ripgrep")
+      ;; TODO consult-register
     )
     ;; evil normal/visual mapping
     ;; (general-evil-setup)
