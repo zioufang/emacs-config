@@ -1,22 +1,22 @@
-  ;; doom emacs
-  (setq gc-cons-threshold (* 50 1000 1000)
-        gc-cons-percentage 0.6)
-  (add-hook 'emacs-startup-hook
-    (lambda ()
-      (setq gc-cons-threshold (* 2 1000 1000)
-            gc-cons-percentage 0.1)))
+;; doom emacs
+(setq gc-cons-threshold (* 50 1000 1000)
+      gc-cons-percentage 0.6)
+(add-hook 'emacs-startup-hook
+  (lambda ()
+    (setq gc-cons-threshold (* 2 1000 1000)
+          gc-cons-percentage 0.1)))
 
-  ;; measure startup time
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "*** Emacs loaded in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
+;; measure startup time
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "*** Emacs loaded in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
 
-  ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
-  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+;; https://emacs-lsp.github.io/lsp-mode/page/performance/
+(setq read-process-output-max (* 1024 1024)) ;; 1mb
 
 (when (boundp 'comp-eln-load-path)
   (setcar comp-eln-load-path
@@ -37,13 +37,13 @@
                          ("elpa" . "https://elpa.gnu.org/packages/")))
 (package-initialize)
 
-  ;; Bootstrap `use-package`
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-  (require 'use-package)
-  (setq use-package-always-ensure t)
-  (setq use-package-verbose t) ;; for debugging startup time
+;; Bootstrap `use-package`
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(require 'use-package)
+(setq use-package-always-ensure t)
+(setq use-package-verbose t) ;; for debugging startup time
 
 ;; Bootstrap straight.el
 (defvar bootstrap-version)
@@ -74,130 +74,130 @@
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :font dot-variable-font :height (+ dot-font-size 30) :weight 'regular)
 
-  (setq inhibit-startup-message t)
-  (scroll-bar-mode -1)        ; Disable visible scrollbar
-  (tool-bar-mode -1)          ; Disable the toolbar
-  (tooltip-mode -1)           ; Disable tooltips
-  (menu-bar-mode -1)            ; Disable the menu bar
-  (set-fringe-mode 5)        ; Give some breathing room
+(setq inhibit-startup-message t)
+(scroll-bar-mode -1)        ; Disable visible scrollbar
+(tool-bar-mode -1)          ; Disable the toolbar
+(tooltip-mode -1)           ; Disable tooltips
+(menu-bar-mode -1)            ; Disable the menu bar
+(set-fringe-mode 5)        ; Give some breathing room
 
-  (auto-revert-mode t)    ;; auto load file when changed
-  (setq auto-revert-avoid-polling t)
+(auto-revert-mode t)    ;; auto load file when changed
+(setq auto-revert-avoid-polling t)
 
-  (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
+(global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
 
-  (setq default-directory "~/projects")
-  (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
-  (setq max-specpdl-size 5000)  ;; for lsp-mode
+(setq default-directory "~/projects")
+(setq max-lisp-eval-depth 10000)  ;; for lsp-mode
+(setq max-specpdl-size 5000)  ;; for lsp-mode
 
-  ;; y/n rather than yes/no
-  (fset 'yes-or-no-p 'y-or-n-p)
+;; y/n rather than yes/no
+(fset 'yes-or-no-p 'y-or-n-p)
 
-  ;; start every frame maximized
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
-  ;; hide title bar
-  ;; (add-to-list 'default-frame-alist '(undecorated . t))
+;; start every frame maximized
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+;; hide title bar
+;; (add-to-list 'default-frame-alist '(undecorated . t))
 
-  ;; mac title bar
+;; mac title bar
+(when (equal system-type 'darwin)
+  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
+;; Tab
+;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
+(setq-default tab-width 2)
+(setq-default evil-shift-width tab-width)
+;; make tab key do indent first then completion.
+(setq-default tab-always-indent 'complete)
+;; make indent commands use space only (never tab character)
+(setq-default indent-tabs-mode nil)
+
+;; no littering
+(setq user-emacs-directory "~/.cache/emacs")
+(use-package no-littering)
+(setq auto-save-file-name-transforms
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+;; replaced by no-littering
+;; store all backup and autosave files in the tmp dir
+;; (setq backup-directory-alist
+;;       `((".*" . ,temporary-file-directory)))
+;; (setq auto-save-file-name-transforms
+;;       `((".*" ,temporary-file-directory t)))
+
+;; Line Number
+(column-number-mode)
+(global-display-line-numbers-mode t)
+(setq display-line-numbers-type 'relative)
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                vterm-mode-hook
+                eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; hightlight current line
+(global-hl-line-mode t)
+
+;; keep history
+(savehist-mode 1)
+(setq history-length 50)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+
+;; clipboard history, shorter for cleaner history
+(setq kill-ring-max 20)
+
+;; enable recentf
+(recentf-mode 1)
+(setq recentf-max-menu-items 200)
+(setq recentf-max-saved-items 200)
+
+;; auto remove trailing whitespace
+(setq show-trailing-whitespace t)
+(add-hook 'before-save-hook
+          (lambda ()
+            (unless (eq major-mode 'markdown-mode)
+              (delete-trailing-whitespace))))
+
+;; case sensitive for query-replace
+(setq case-fold-search  nil)
+
+(setq tab-bar-new-tab-to `rightmost
+      tab-bar-show t
+      ;; tab-bar-new-tab-choice "~/projects"
+      tab-bar-new-tab-choice "*scratch*"
+)
+
+;; Get the current tab name for use in some other display when tab-bar-show = nil
+(defun dot/current-tab-name ()
+  (alist-get 'name (tab-bar--current-tab)))
+
+(use-package dired
+  :ensure nil
+  :straight nil
+  :hook (dired-mode . dired-hide-details-mode)
+  :commands (dired dired-jump)
+  :bind (("C-x C-d" . dired-jump))
+  :custom
+  (dired-listing-switches "-Agho --group-directories-first")
+  :config
+  (setq dired-dwim-target t)
+  (put 'dired-find-alternate-file 'disabled nil) ; disables warning
+  ;; not use macos ls
   (when (equal system-type 'darwin)
-    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-    (add-to-list 'default-frame-alist '(ns-appearance . dark)))
-  ;; Tab
-  ;; http://ergoemacs.org/emacs/emacs_tabs_space_indentation_setup.html
-  (setq-default tab-width 2)
-  (setq-default evil-shift-width tab-width)
-  ;; make tab key do indent first then completion.
-  (setq-default tab-always-indent 'complete)
-  ;; make indent commands use space only (never tab character)
-  (setq-default indent-tabs-mode nil)
+    (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
 
-  ;; no littering
-  (setq user-emacs-directory "~/.cache/emacs")
-  (use-package no-littering)
-  (setq auto-save-file-name-transforms
-        `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode))
 
-  ;; replaced by no-littering
-  ;; store all backup and autosave files in the tmp dir
-  ;; (setq backup-directory-alist
-  ;;       `((".*" . ,temporary-file-directory)))
-  ;; (setq auto-save-file-name-transforms
-  ;;       `((".*" ,temporary-file-directory t)))
-
-  ;; Line Number
-  (column-number-mode)
-  (global-display-line-numbers-mode t)
-  (setq display-line-numbers-type 'relative)
-  ;; Disable line numbers for some modes
-  (dolist (mode '(org-mode-hook
-                  vterm-mode-hook
-                  eshell-mode-hook))
-    (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
-  ;; hightlight current line
-  (global-hl-line-mode t)
-
-  ;; keep history
-  (savehist-mode 1)
-  (setq history-length 50)
-  (setq history-delete-duplicates t)
-  (setq savehist-save-minibuffer-history 1)
-  (setq savehist-additional-variables
-        '(kill-ring
-          search-ring
-          regexp-search-ring))
-
-  ;; clipboard history, shorter for cleaner history
-  (setq kill-ring-max 20)
-
-  ;; enable recentf
-  (recentf-mode 1)
-  (setq recentf-max-menu-items 200)
-  (setq recentf-max-saved-items 200)
-
-  ;; auto remove trailing whitespace
-  (setq show-trailing-whitespace t)
-  (add-hook 'before-save-hook
-            (lambda ()
-              (unless (eq major-mode 'markdown-mode)
-                (delete-trailing-whitespace))))
-
-  ;; case sensitive for query-replace
-  (setq case-fold-search  nil)
-
-  (setq tab-bar-new-tab-to `rightmost
-        tab-bar-show t
-        ;; tab-bar-new-tab-choice "~/projects"
-        tab-bar-new-tab-choice "*scratch*"
-  )
-
-  ;; Get the current tab name for use in some other display when tab-bar-show = nil
-  (defun dot/current-tab-name ()
-    (alist-get 'name (tab-bar--current-tab)))
-
-  (use-package dired
-    :ensure nil
-    :straight nil
-    :hook (dired-mode . dired-hide-details-mode)
-    :commands (dired dired-jump)
-    :bind (("C-x C-d" . dired-jump))
-    :custom
-    (dired-listing-switches "-Agho --group-directories-first")
-    :config
-    (setq dired-dwim-target t)
-    (put 'dired-find-alternate-file 'disabled nil) ; disables warning
-    ;; not use macos ls
-    (when (equal system-type 'darwin)
-      (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
-
-  (use-package all-the-icons-dired
-    :hook (dired-mode . all-the-icons-dired-mode))
-
-  (use-package dired-hide-dotfiles
-    :hook (dired-mode . dired-hide-dotfiles-mode)
-    :config
-    (evil-collection-define-key 'normal 'dired-mode-map
-      "gh" 'dired-hide-dotfiles-mode))
+(use-package dired-hide-dotfiles
+  :hook (dired-mode . dired-hide-dotfiles-mode)
+  :config
+  (evil-collection-define-key 'normal 'dired-mode-map
+    "gh" 'dired-hide-dotfiles-mode))
 
 (use-package orderless
   :custom (completion-styles '(orderless)))
@@ -229,32 +229,32 @@
   :config
   (marginalia-mode))
 
-  ;; Theme
-  (use-package doom-themes
-    :config
-    (load-theme 'doom-gruvbox t))
+;; Theme
+(use-package doom-themes
+  :config
+  (load-theme 'doom-gruvbox t))
 
-  (use-package doom-modeline
-    :init (doom-modeline-mode 1)
-    :config
-    (line-number-mode -1)
-    (column-number-mode -1)
-    (size-indication-mode -1)
-    :custom
-    ((doom-modeline-height 10)
-    (doom-modeline-buffer-encoding nil)
-    ))
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :config
+  (line-number-mode -1)
+  (column-number-mode -1)
+  (size-indication-mode -1)
+  :custom
+  ((doom-modeline-height 10)
+  (doom-modeline-buffer-encoding nil)
+  ))
 
-  ; M-x all-the-icons-install-fonts
-  (use-package all-the-icons)
+; M-x all-the-icons-install-fonts
+(use-package all-the-icons)
 
-  (use-package yascroll
-    :init (global-yascroll-bar-mode 1)
-    :config
-    (set-face-attribute 'yascroll:thumb-text-area nil :background "steel blue")
-    (set-face-attribute 'yascroll:thumb-fringe nil :background "steel blue" :foreground "steel blue")
-    :custom (yascroll:delay-to-hide 0.8)
-  )
+(use-package yascroll
+  :init (global-yascroll-bar-mode 1)
+  :config
+  (set-face-attribute 'yascroll:thumb-text-area nil :background "steel blue")
+  (set-face-attribute 'yascroll:thumb-fringe nil :background "steel blue" :foreground "steel blue")
+  :custom (yascroll:delay-to-hide 0.8)
+)
 
 ;; Which Key
 (use-package which-key
@@ -263,161 +263,161 @@
   :config
   (setq which-key-idle-delay 0.2))
 
-  (use-package command-log-mode
-   :disabled)
+(use-package command-log-mode
+ :disabled)
 
-  (defun dot/org-mode-setup ()
-    (org-indent-mode)
-    (variable-pitch-mode 1)
-    (set-variable 'org-hide-emphasis-markers t)
-    (visual-line-mode 1))
+(defun dot/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (set-variable 'org-hide-emphasis-markers t)
+  (visual-line-mode 1))
 
-  (defun dot/org-font-setup ()
-    ;; Replace list hyphen with dot
-    ;; (font-lock-add-keywords 'org-mode
-    ;;                         '(("^ *\\([-]\\) "
-    ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-   ;; Set faces for heading levels
-    (dolist (face '((org-level-1 . 1.2)
-                    (org-level-2 . 1.1)
-                    (org-level-3 . 1.05)
-                    (org-level-4 . 1.0)
-                    (org-level-5 . 1.1)
-                    (org-level-6 . 1.1)
-                    (org-level-7 . 1.1)
-                    (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
+(defun dot/org-font-setup ()
+  ;; Replace list hyphen with dot
+  ;; (font-lock-add-keywords 'org-mode
+  ;;                         '(("^ *\\([-]\\) "
+  ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+ ;; Set faces for heading levels
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font dot-variable-font :weight 'regular :height (cdr face)))
 
-    (custom-theme-set-faces 'user
-                          `(org-level-3 ((t (:foreground "sky blue")))))
+  (custom-theme-set-faces 'user
+                        `(org-level-3 ((t (:foreground "sky blue")))))
 
-    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
-  (defun org-toggle-emphasis ()
-    "Toggle hiding/showing of org emphasize markers."
-    (interactive)
-    (if org-hide-emphasis-markers
-        (set-variable 'org-hide-emphasis-markers nil)
-      (set-variable 'org-hide-emphasis-markers t))
-    )
-
-  (use-package org
-    :demand t         ;; remove this for better startup time
-    :commands (org-capture org-agenda)
-    :hook (org-mode . dot/org-mode-setup)
-    :config
-    (setq org-ellipsis " ▾")
-    (dot/org-font-setup)
-    (setq org-agenda-files
-      '("~/projects/org/personal.org"
-        "~/projects/org/tasks.org"))
-    (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
-    ;; tags
-    (setq org-tag-alist
-      '((:startgroup)
-        ; Put mutually exclusive tags here
-        (:endgroup)
-        ("@errand" . ?E)
-        ("@home" . ?H)
-        ("@work" . ?W)))
-    ;; refiling
-    (setq org-refile-targets
-      '(("archive.org" :maxlevel . 1)))
-    ;; Save Org buffers after refiling!
-    (advice-add 'org-refile :after 'org-save-all-org-buffers)
-    ;; org capture
-    (setq org-capture-templates
-      `(("t" "Tasks / Projects")
-        ("tt" "Task" entry (file+olp "~/projects/org/tasks" "Inbox")
-            "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)))
-    )
-
-  (use-package org-superstar
-    :after org
-    :hook (org-mode . (lambda () (org-superstar-mode 1)))
-    :custom
-    (org-superstar-item-bullet-alist
-    '((?- . ?•)
-      (?+ . ?➤))))
-
-  (straight-use-package '(org-appear :type git :host github :repo "awth13/org-appear"))
-  (use-package org-appear
-    :after org
-    :hook (org-mode . org-appear-mode))
-
-  (defun dot/org-mode-visual-fill ()
-    (setq visual-fill-column-width 100
-          visual-fill-column-center-text t)
-    (visual-fill-column-mode 1))
-
-  (use-package visual-fill-column
-    :after org
-    :hook (org-mode . dot/org-mode-visual-fill))
-
-
-
-  (with-eval-after-load 'org
-    (org-babel-do-load-languages
-      'org-babel-load-languages
-      '((emacs-lisp . t)
-        ))
-    (setq org-confirm-babel-evaluate nil)
-    (setq org-src-preserve-indentation t)
-    (require 'org-tempo)
-    (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-    (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(defun org-toggle-emphasis ()
+  "Toggle hiding/showing of org emphasize markers."
+  (interactive)
+  (if org-hide-emphasis-markers
+      (set-variable 'org-hide-emphasis-markers nil)
+    (set-variable 'org-hide-emphasis-markers t))
   )
 
-  (defun dot/org-present-prepare-slide ()
-    (org-overview)
-    (org-show-entry)
-    (org-show-all)
-    (org-display-inline-images))
+(use-package org
+  :demand t         ;; remove this for better startup time
+  :commands (org-capture org-agenda)
+  :hook (org-mode . dot/org-mode-setup)
+  :config
+  (setq org-ellipsis " ▾")
+  (dot/org-font-setup)
+  (setq org-agenda-files
+    '("~/projects/org/personal.org"
+      "~/projects/org/tasks.org"))
+  (setq org-todo-keywords
+    '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
+  ;; tags
+  (setq org-tag-alist
+    '((:startgroup)
+      ; Put mutually exclusive tags here
+      (:endgroup)
+      ("@errand" . ?E)
+      ("@home" . ?H)
+      ("@work" . ?W)))
+  ;; refiling
+  (setq org-refile-targets
+    '(("archive.org" :maxlevel . 1)))
+  ;; Save Org buffers after refiling!
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+  ;; org capture
+  (setq org-capture-templates
+    `(("t" "Tasks / Projects")
+      ("tt" "Task" entry (file+olp "~/projects/org/tasks" "Inbox")
+          "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)))
+  )
 
-  (defun dot/org-present-hook ()
-    (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
-                                       (header-line (:height 4.5) variable-pitch)
-                                       (org-code (:height 1.55) org-code)
-                                       (org-verbatim (:height 1.75) org-verbatim)
-                                       (org-block (:height 1.25) org-block)
-                                       (org-block-begin-line (:height 0.7) org-block)))
-    (setq header-line-format " "
-          org-image-actual-width nil)
-    (org-display-inline-images)
-    (dot/org-present-prepare-slide)
-    (setq-local org-appear-mode nil))
+(use-package org-superstar
+  :after org
+  :hook (org-mode . (lambda () (org-superstar-mode 1)))
+  :custom
+  (org-superstar-item-bullet-alist
+  '((?- . ?•)
+    (?+ . ?➤))))
 
-  (defun dot/org-present-quit-hook ()
-    (setq-local face-remapping-alist '((default variable-pitch default)))
-    (setq header-line-format nil)
-    (org-present-small)
-    (org-remove-inline-images))
+(straight-use-package '(org-appear :type git :host github :repo "awth13/org-appear"))
+(use-package org-appear
+  :after org
+  :hook (org-mode . org-appear-mode))
 
-  (defun dot/org-present-prev ()
-    (interactive)
-    (org-present-prev)
-    (dot/org-present-prepare-slide))
+(defun dot/org-mode-visual-fill ()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
 
-  (defun dot/org-present-next ()
-    (interactive)
-    (org-present-next)
-    (dot/org-present-prepare-slide))
+(use-package visual-fill-column
+  :after org
+  :hook (org-mode . dot/org-mode-visual-fill))
 
-  (use-package org-present
-    :commands org-present
-    :bind (:map org-present-mode-keymap
-           ("C-c C-l" . dot/org-present-next)
-           ("C-c C-h" . dot/org-present-prev))
-    :hook ((org-present-mode . dot/org-present-hook)
-           (org-present-mode-quit . dot/org-present-quit-hook)))
+
+
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((emacs-lisp . t)
+      ))
+  (setq org-confirm-babel-evaluate nil)
+  (setq org-src-preserve-indentation t)
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+)
+
+(defun dot/org-present-prepare-slide ()
+  (org-overview)
+  (org-show-entry)
+  (org-show-all)
+  (org-display-inline-images))
+
+(defun dot/org-present-hook ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.5) variable-pitch)
+                                     (org-code (:height 1.55) org-code)
+                                     (org-verbatim (:height 1.75) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.7) org-block)))
+  (setq header-line-format " "
+        org-image-actual-width nil)
+  (org-display-inline-images)
+  (dot/org-present-prepare-slide)
+  (setq-local org-appear-mode nil))
+
+(defun dot/org-present-quit-hook ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
+  (setq header-line-format nil)
+  (org-present-small)
+  (org-remove-inline-images))
+
+(defun dot/org-present-prev ()
+  (interactive)
+  (org-present-prev)
+  (dot/org-present-prepare-slide))
+
+(defun dot/org-present-next ()
+  (interactive)
+  (org-present-next)
+  (dot/org-present-prepare-slide))
+
+(use-package org-present
+  :commands org-present
+  :bind (:map org-present-mode-keymap
+         ("C-c C-l" . dot/org-present-next)
+         ("C-c C-h" . dot/org-present-prev))
+  :hook ((org-present-mode . dot/org-present-hook)
+         (org-present-mode-quit . dot/org-present-quit-hook)))
 
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun dot/org-babel-tangle-config ()
@@ -428,66 +428,66 @@
       (org-babel-tangle))))
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot/org-babel-tangle-config)))
 
-  (use-package evil
-    :init
-    (setq evil-want-C-u-scroll t)
-    (setq evil-want-keybinding nil)  ;; for evil-collection
-    :config
-    (evil-mode 1)
-    (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-    (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-    (evil-set-initial-state 'messages-buffer-mode 'normal)
-    (evil-set-initial-state 'dashboard-mode 'normal)
-  )
-  ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
-  ;; define an ex kestroke to a func
-  ;; (eval-after-load 'evil-ex
-  ;;   '(evil-ex-define-cmd "bl" 'gud-break))
-
-  (use-package evil-collection
-    :after evil
-    :config
-    (evil-collection-init))
-
-  (use-package evil-commentary
-    :after evil
-    :config
-    (evil-commentary-mode))
-
-  ;; (use-package evil-snipe
-  ;;   :after evil
-  ;;   :init
-  ;;   (setq evil-snipe-scope 'visible)
-  ;;   (setq evil-snipe-repeat-scope 'whole-visible)
-  ;;   :config
-  ;;   (evil-snipe-mode)
-  ;;   (evil-snipe-override-mode)
-  ;;   (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
-
-  (use-package evil-surround
-    :config
-    (global-evil-surround-mode))
-
-  (use-package undo-fu
-    :after evil
-    :config
-    (setq undo-limit 400000
-        undo-strong-limit 3000000
-        undo-outer-limit 3000000)
-    (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
-    (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
-
-  (defun dot/insert-curly ()
-  (interactive)
-  (insert "{\n}")
-  (evil-normal-state)
-  (evil-open-above 1)
-  )
-
-  (use-package key-chord
-  :hook (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+(use-package evil
+  :init
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-keybinding nil)  ;; for evil-collection
   :config
-  (key-chord-mode 1))
+  (evil-mode 1)
+  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+  (evil-set-initial-state 'messages-buffer-mode 'normal)
+  (evil-set-initial-state 'dashboard-mode 'normal)
+)
+;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
+;; define an ex kestroke to a func
+;; (eval-after-load 'evil-ex
+;;   '(evil-ex-define-cmd "bl" 'gud-break))
+
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init))
+
+(use-package evil-commentary
+  :after evil
+  :config
+  (evil-commentary-mode))
+
+;; (use-package evil-snipe
+;;   :after evil
+;;   :init
+;;   (setq evil-snipe-scope 'visible)
+;;   (setq evil-snipe-repeat-scope 'whole-visible)
+;;   :config
+;;   (evil-snipe-mode)
+;;   (evil-snipe-override-mode)
+;;   (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+
+(use-package evil-surround
+  :config
+  (global-evil-surround-mode))
+
+(use-package undo-fu
+  :after evil
+  :config
+  (setq undo-limit 400000
+      undo-strong-limit 3000000
+      undo-outer-limit 3000000)
+  (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
+  (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+
+(defun dot/insert-curly ()
+(interactive)
+(insert "{\n}")
+(evil-normal-state)
+(evil-open-above 1)
+)
+
+(use-package key-chord
+:hook (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+:config
+(key-chord-mode 1))
 
 (setq tramp-default-method "ssh")
 
@@ -505,244 +505,241 @@
 (use-package flycheck
   :hook (lsp-mode . global-flycheck-mode))
 
-  (use-package lsp-ui
-  :after lsp-mode
-  :init
-  (setq lsp-ui-sideline-show-diagnostics t
-        lsp-ui-sideline-show-hover nil
-        lsp-ui-sideline-show-code-actions nil
-        lsp-ui-doc-enable nil
-  ))
+(use-package lsp-ui
+:after lsp-mode
+:init
+(setq lsp-ui-sideline-show-diagnostics t
+      lsp-ui-sideline-show-hover nil
+      lsp-ui-sideline-show-code-actions nil
+      lsp-ui-doc-enable nil
+))
 
 (use-package lsp-treemacs
   :after lsp-mode)
 
-  ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
-  (use-package company
-    :after lsp-mode
-    ;; :hook
-    ;; (lsp-mode . dot/init-company-lsp)
-    :bind (:map company-active-map
-           ("<tab>" . company-complete-common-or-cycle))
-          (:map lsp-mode-map
-           ("<tab>" . company-indent-or-complete-common))
-    :custom
-    (company-backends '(company-capf))
-    (company-minimum-prefix-length 2)
-    (company-idle-delay 0.0))
-    :config
-    (global-company-mode)
+;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
+(use-package company
+  :after lsp-mode
+  ;; :hook
+  ;; (lsp-mode . dot/init-company-lsp)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-common-or-cycle))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-backends '(company-capf))
+  (company-minimum-prefix-length 2)
+  (company-idle-delay 0.0))
+  :config
+  (global-company-mode)
 
-  (use-package company-box
-    :hook (company-mode . company-box-mode))
+(use-package company-box
+  :hook (company-mode . company-box-mode))
 
-  (use-package company-prescient
-    :after company
-    :config
-    (company-prescient-mode 1))
+(use-package company-prescient
+  :after company
+  :config
+  (company-prescient-mode 1))
 
-  (use-package dap-mode
-    ;; Uncomment the config below if you want all UI panes to be hidden by default!
-    ;; :custom
-    ;; (lsp-enable-dap-auto-configure nil)
-    :commands dap-debug
-    :config
-    (require 'dap-hydra)
-    ;; (dap-ui-mode 1)
-    (add-hook 'dap-stopped-hook
-          (lambda (arg) (call-interactively #'dap-hydra)))
-    ;; Bind `C-c l d` to `dap-hydra` for easy access
-    (general-define-key
-      :keymaps 'lsp-mode-map
-      :prefix "C-c"
-      "d" '(dap-hydra t :wk "debugger")))
+(use-package dap-mode
+  ;; Uncomment the config below if you want all UI panes to be hidden by default!
+  ;; :custom
+  ;; (lsp-enable-dap-auto-configure nil)
+  :commands dap-debug
+  :config
+  (require 'dap-hydra)
+  ;; (dap-ui-mode 1)
+  (add-hook 'dap-stopped-hook
+        (lambda (arg) (call-interactively #'dap-hydra)))
+  ;; Bind `C-c l d` to `dap-hydra` for easy access
+  (general-define-key
+    :keymaps 'lsp-mode-map
+    :prefix "C-c"
+    "d" '(dap-hydra t :wk "debugger")))
 
-  ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
-  (use-package projectile
-    :demand t
-    :diminish projectile-mode
-    :config
-    (projectile-mode)
-    (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
-    :bind-keymap ("C-c p" . projectile-command-map)
-    :init
-    ;; NOTE: Set this to the folder where you keep your Git repos!
-    (when (file-directory-p "~/projects")
-      (setq projectile-project-search-path '("~/projects")))
-  )
+;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
+(use-package projectile
+  :demand t
+  :diminish projectile-mode
+  :config
+  (projectile-mode)
+  (define-key projectile-command-map (kbd "ESC") nil);; default ESC is bad toggle buffer
+  :bind-keymap ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  (when (file-directory-p "~/projects")
+    (setq projectile-project-search-path '("~/projects")))
+)
 
-  (use-package magit
-    ;; enter opens file in the other window
-    :bind (:map magit-file-section-map
-           ("RET" . magit-diff-visit-file-other-window)
-           :map magit-hunk-section-map
-           ("RET" . magit-diff-visit-file-other-window))
-    :custom
-    (magit-diff-refine-hunk (quote all)) ;; hightlight the exact diff
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+(use-package magit
+  ;; enter opens file in the other window
+  :bind (:map magit-file-section-map
+         ("RET" . magit-diff-visit-file-other-window)
+         :map magit-hunk-section-map
+         ("RET" . magit-diff-visit-file-other-window))
+  :custom
+  (magit-diff-refine-hunk (quote all)) ;; hightlight the exact diff
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
-  (use-package magit-todos
-    :after magit)
+(use-package magit-todos
+  :after magit)
 
-  (use-package git-link
-    :commands git-link
-    :config
-    (setq git-link-open-in-browser t))
+(use-package git-link
+  :commands git-link
+  :config
+  (setq git-link-open-in-browser t))
 
-  (use-package git-gutter
-    :diminish
-    :hook ((text-mode . git-gutter-mode)
-           (prog-mode . git-gutter-mode))
-    :config
-    (setq git-gutter:update-interval 2))
+(use-package git-gutter
+  :diminish
+  :hook ((text-mode . git-gutter-mode)
+         (prog-mode . git-gutter-mode))
+  :config
+  (setq git-gutter:update-interval 2))
 
 (use-package wgrep)
 
-  (use-package vterm
-  :commands vterm
-  :config (setq vterm-max-scrollback 10000))
+(use-package vterm
+:commands vterm
+:config (setq vterm-max-scrollback 10000))
 
-  (use-package vterm-toggle
-  :commands vterm
-  :custom (vterm-toggle-scope 'frame)
+(use-package vterm-toggle
+:commands vterm
+:custom (vterm-toggle-scope 'frame)
+:config
+(setq vterm-toggle-fullscreen-p nil)
+;; open vterm in dedicated bottom window
+(add-to-list 'display-buffer-alist
+             '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                ;; (display-buffer-reuse-window display-buffer-at-bottom)
+                (display-buffer-reuse-window display-buffer-in-direction)
+                ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                (direction . bottom)
+                (dedicated . t) ;dedicated is supported in emacs27
+                (reusable-frames . visible)
+                (window-height . 0.3)))
+)
+
+(use-package yasnippet
+:config
+(setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
+(yas-reload-all)
+(add-hook 'prog-mode-hook #'yas-minor-mode)
+)
+
+(use-package avy)
+
+;; Make sure emacs use the proper ENV VAR
+(use-package exec-path-from-shell)
+;; disable auto load as it is slow
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+;; for daemon only
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
+;; rainbow delimiter
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+;; Built-in Python utilities
+(use-package python
+  :hook (python-mode . lsp-deferred)
+  :custom
+  (dap-python-debugger 'debugpy)
+  (dap-python-executable "python3")
   :config
-  (setq vterm-toggle-fullscreen-p nil)
-  ;; open vterm in dedicated bottom window
-  (add-to-list 'display-buffer-alist
-               '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-                  ;; (display-buffer-reuse-window display-buffer-at-bottom)
-                  (display-buffer-reuse-window display-buffer-in-direction)
-                  ;;display-buffer-in-direction/direction/dedicated is added in emacs27
-                  (direction . bottom)
-                  (dedicated . t) ;dedicated is supported in emacs27
-                  (reusable-frames . visible)
-                  (window-height . 0.3)))
-  )
+  (require 'dap-python)
+  ;; Remove guess indent python message
+  (setq python-indent-guess-indent-offset-verbose nil)
+  ;; Use IPython when available or fall back to regular Python
+  (cond
+   ((executable-find "ipython")
+    (progn
+      (setq python-shell-buffer-name "ipython")
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i --simple-prompt")))
+   ((executable-find "python3")
+    (setq python-shell-interpreter "python3")))
+  ;; change docstring color to be the same of comment
+  (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
+)
 
-  (use-package yasnippet
+;; auto switching python venv to <project>/.venv
+;; https://github.com/jorgenschaefer/pyvenv/issues/51
+(defun dot/pyvenv-autoload ()
+          (interactive)
+          "auto activate venv directory if exists"
+          (f-traverse-upwards (lambda (path)
+              (let ((venv-path (f-expand ".venv" path)))
+              (when (f-exists? venv-path)
+              (pyvenv-activate venv-path))))))
+
+(use-package pyvenv
+  :after python
+  :hook (python-mode . dot/pyvenv-autoload)
   :config
-  (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
-  (yas-reload-all)
-  (add-hook 'prog-mode-hook #'yas-minor-mode)
-  )
+  ;; Use IPython when available or fall back to regular Python
+  (cond
+   ((executable-find "ipython")
+    (progn
+      (setq python-shell-buffer-name "ipython")
+      (setq python-shell-interpreter "ipython")
+      (setq python-shell-interpreter-args "-i --simple-prompt")))
+   ((executable-find "python3")
+    (setq python-shell-interpreter "python3")))
+  (pyvenv-tracking-mode 1))
 
-  (use-package avy
-  )
+;; Hide the modeline for inferior python processes
+(use-package inferior-python-mode
+  :ensure nil
+  :straight nil
+  :hook (inferior-python-mode . hide-mode-line-mode)
+  :config (setq python-shell-prompt-detect-failure-warning nil))
 
-  ;; Make sure emacs use the proper ENV VAR
-  (use-package exec-path-from-shell)
-  ;; disable auto load as it is slow
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
-  ;; for daemon only
-  (when (daemonp)
-    (exec-path-from-shell-initialize))
-
-  ;; rainbow delimiter
-  (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
-
-    ;; Built-in Python utilities
-    (use-package python
-      :hook (python-mode . lsp-deferred)
-      :custom
-      (dap-python-debugger 'debugpy)
-      (dap-python-executable "python3")
-      :config
-      (require 'dap-python)
-      ;; Remove guess indent python message
-      (setq python-indent-guess-indent-offset-verbose nil)
-      ;; Use IPython when available or fall back to regular Python
-      (cond
-       ((executable-find "ipython")
-        (progn
-          (setq python-shell-buffer-name "ipython")
-          (setq python-shell-interpreter "ipython")
-          (setq python-shell-interpreter-args "-i --simple-prompt")))
-       ((executable-find "python3")
-        (setq python-shell-interpreter "python3")))
-      ;; change docstring color to be the same of comment
-      (set-face-attribute 'font-lock-doc-face nil :foreground "#928374")
-    )
-
-    ;; auto switching python venv to <project>/.venv
-    ;; https://github.com/jorgenschaefer/pyvenv/issues/51
-    (defun dot/pyvenv-autoload ()
-              (interactive)
-              "auto activate venv directory if exists"
-              (f-traverse-upwards (lambda (path)
-                  (let ((venv-path (f-expand ".venv" path)))
-                  (when (f-exists? venv-path)
-                  (pyvenv-activate venv-path))))))
-
-    (use-package pyvenv
-      :after python
-      :hook (python-mode . dot/pyvenv-autoload)
-      :config
-      ;; Use IPython when available or fall back to regular Python
-      (cond
-       ((executable-find "ipython")
-        (progn
-          (setq python-shell-buffer-name "ipython")
-          (setq python-shell-interpreter "ipython")
-          (setq python-shell-interpreter-args "-i --simple-prompt")))
-       ((executable-find "python3")
-        (setq python-shell-interpreter "python3")))
-      (pyvenv-tracking-mode 1))
-
-    ;; Hide the modeline for inferior python processes
-    (use-package inferior-python-mode
-      :ensure nil
-      :straight nil
-      :hook (inferior-python-mode . hide-mode-line-mode)
-      :config (setq python-shell-prompt-detect-failure-warning nil))
-
-    ;; pyright, it detects venv/.venv automatically
-    (use-package lsp-pyright
-      :hook (python-mode . (lambda ()
-                              (require 'lsp-pyright)
-                              (lsp-deferred)))
-      :config
-      (when (executable-find "python3"
-            (setq lsp-pyright-python-executable-cmd "python3")))
-      ;; :custom
-      ;; (lsp-pyright-typechecking-mode "off")
-    )
-
-  ;; (use-package lsp-python-ms
-  ;;   :ensure t
-  ;;   :init
-  ;;   (setq lsp-python-ms-auto-install-server t
-  ;;         lsp-python-ms-python-executable-cmd "python3")
-  ;;   :hook (python-mode . (lambda ()
-  ;;                           (require 'lsp-python-ms)
-  ;;                           (lsp-deferred))))
-
-    (use-package blacken
-      :after python
-      :custom (blacken-line-length 99))
-
-    ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
-    (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
-
-  (use-package ein
-  :commands ein:run)
-
-  (defun dot/lsp-go-before-save-hooks ()
-    ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
-    (setq gofmt-command "goimports")
-    (add-hook 'before-save-hook 'gofmt-before-save)
-    (add-hook 'before-save-hook #'lsp-organize-imports t t))
-  (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
-
-  (use-package go-mode
-  :hook (go-mode . lsp-deferred)
+;; pyright, it detects venv/.venv automatically
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp-deferred)))
   :config
-  (require 'dap-go)
-  )
+  (when (executable-find "python3"
+        (setq lsp-pyright-python-executable-cmd "python3")))
+  ;; :custom
+  ;; (lsp-pyright-typechecking-mode "off")
+)
 
-(use-package terraform-mode
-  :mode "\\.tf\\'")
+;; (use-package lsp-python-ms
+;;   :ensure t
+;;   :init
+;;   (setq lsp-python-ms-auto-install-server t
+;;         lsp-python-ms-python-executable-cmd "python3")
+;;   :hook (python-mode . (lambda ()
+;;                           (require 'lsp-python-ms)
+;;                           (lsp-deferred))))
+
+  (use-package blacken
+    :after python
+    :custom (blacken-line-length 99))
+
+  ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
+  (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+
+(use-package ein :commands ein:run)
+
+(defun dot/lsp-go-before-save-hooks ()
+  ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (setq gofmt-command "goimports")
+  (add-hook 'before-save-hook 'gofmt-before-save)
+  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+(add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
+
+(use-package go-mode
+:hook (go-mode . lsp-deferred)
+:config
+(require 'dap-go)
+)
+
+(use-package terraform-mode :mode "\\.tf\\'")
 
 (use-package markdown-mode
   :mode (("README\\.md\\'" . gfm-mode)
@@ -753,191 +750,192 @@
 (use-package dockerfile-mode
   :mode "\\Dockerfile\\'")
 
-  ;; (use-package elfeed
-  ;; :config
-  ;; (setf url-queue-timeout 15)
-  ;; (setq elfeed-feeds
-  ;;   '(
-  ;;   "https://hnrss.org/frontpage"
-  ;;   )
-  ;; ))
+;; (use-package elfeed
+;; :config
+;; (setf url-queue-timeout 15)
+;; (setq elfeed-feeds
+;;   '(
+;;   "https://hnrss.org/frontpage"
+;;   )
+;; ))
 
-      (defun dot/go-to-dotemacs ()
-          "Go To Emacs Config File"
-          (interactive)
-          (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
+(defun dot/go-to-dotemacs ()
+    "Go To Emacs Config File"
+    (interactive)
+    (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
 
-      (defun dot/toggle-frame ()
-          "
-          Toggle between make-frame (if visible frame == 1) and delete-frame (else).
-          Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
-          "
-          (interactive)
-          (if (eq (length (visible-frame-list)) 1)
-              (make-frame)
-              (delete-frame)))
+(defun dot/toggle-frame ()
+    "
+    Toggle between make-frame (if visible frame == 1) and delete-frame (else).
+    Mimic toggling maximized buffer behaviour together with the starting frame maximized setting
+    "
+    (interactive)
+    (if (eq (length (visible-frame-list)) 1)
+        (make-frame)
+        (delete-frame)))
 
-      (defun dot/toggle-maximize-buffer () "Maximize buffer"
-        (interactive)
-        (if (= 1 (length (window-list)))
-            (jump-to-register '_)
-          (progn
-            (window-configuration-to-register '_)
-            (delete-other-windows))))
+(defun dot/toggle-maximize-buffer () "Maximize buffer"
+  (interactive)
+  (if (= 1 (length (window-list)))
+      (jump-to-register '_)
+    (progn
+      (window-configuration-to-register '_)
+      (delete-other-windows))))
 
-      (defun dot/split-dired-jump ()
-          "Split left dired jump"
-          (interactive)
-          (split-window-right)
-          (evil-window-right 1)
-          (balance-windows)
-          (dired-jump))
+(defun dot/split-dired-jump ()
+    "Split left dired jump"
+    (interactive)
+    (split-window-right)
+    (evil-window-right 1)
+    (balance-windows)
+    (dired-jump))
 
-      (defun dot/kill-other-prog-buffers ()
-        "Kill all other buffers."
-        (interactive)
-        (save-excursion
-          (let ((count 0))
-            (dolist (buffer (delq (current-buffer) (buffer-list)))
-              (set-buffer buffer)
-              (when (not (equal major-mode 'fundamental-mode))
-                (setq count (1+ count))
-                (kill-buffer buffer)))
-            (message "Killed %i prog buffer(s)." count)))
-      )
+(defun dot/kill-other-prog-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (save-excursion
+    (let ((count 0))
+      (dolist (buffer (delq (current-buffer) (buffer-list)))
+        (set-buffer buffer)
+        (when (not (equal major-mode 'fundamental-mode))
+          (setq count (1+ count))
+          (kill-buffer buffer)))
+      (message "Killed %i prog buffer(s)." count)))
+)
 
-      (defun dot/refresh-projectile-mode ()
-        "Turn projectile off and on to refresh"
-        (interactive)
-        (projectile-mode -1)
-        (projectile-mode))
+(defun dot/refresh-projectile-mode ()
+  "Turn projectile off and on to refresh"
+  (interactive)
+  (projectile-mode -1)
+  (projectile-mode))
 
-      (defun dot/new-named-tab (name)
-          "Create a new tab with name inputs, prefixed by its index"
-          (interactive "MNew Tab Name: ")
-          (tab-bar-new-tab)
-          (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+(defun dot/new-named-tab (name)
+    "Create a new tab with name inputs, prefixed by its index"
+    (interactive "MNew Tab Name: ")
+    (tab-bar-new-tab)
+    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
-      (defun dot/straight-freeze-then-backup ()
-        (interactive)
-        (straight-freeze-versions)
-        (delete-file "~/projects/emacs-config/default.el")
-        (copy-file "~/.config/emacs/straight/versions/default.el" "~/projects/emacs-config/default.el")
+(defun dot/straight-freeze-then-backup ()
+  (interactive)
+  (straight-freeze-versions)
+  (delete-file "~/projects/emacs-config/default.el")
+  (copy-file "~/.config/emacs/straight/versions/default.el" "~/projects/emacs-config/default.el")
+)
+
+(defun dot/straight-thaw-from-backup ()
+  (interactive)
+  (delete-file "~/.config/emacs/straight/versions/default.el")
+  (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
+  (straight-thaw-versions)
+)
+
+(use-package hydra
+ :defer t)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale font size"
+  ("k" text-scale-increase "increase")
+  ("j" text-scale-decrease "decrease")
+  ("q" nil "quit" :exit t))
+
+(use-package general
+  :config
+  ;; leader key overrides for all modes (e.g. dired) in normal state
+  (general-override-mode)
+  (general-define-key
+    :states '(normal emacs)
+    :keymaps 'override
+    :prefix "SPC"
+    :non-normal-prefix "M-SPC"
+    "t" '(vterm-toggle :which-key "toggle vterm")
+    "p" '(projectile-switch-project :which-key "switch project")
+    "b" '(consult-buffer :which-key "switch buffer")
+    "k" '(kill-current-buffer :which-key "kill current buffer")
+    "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
+    ;; magit
+    "SPC" '(magit-status :which-key "magit status")
+    "g"   '(:ignore g :which-key "magit commands")
+    "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+    "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
+    "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
+    "gm"  '(vc-refresh-state :which-key "update modeline vc state")
+    ;; find file ops
+    "f" '(:ignore f :which-key "file commands")
+    "fd" '(projectile-find-file-in-known-projects :which-key "fd files ~/projects")
+    "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
+    "fr" '(consult-recent-file :which-key "find recent files")
+    "ff" '(projectile-find-file :which-key "find project files")
+    ;; linting
+    "l" '(:ignore l :which-key "linting commands")
+    "ll" '(flycheck-list-errors :which-key "list errors")
+    "lj" '(flycheck-next-error :which-key "next error")
+    "lk" '(flycheck-previous-error :which-key "previous error")
+    ;; org
+    "o" '(:ignore o :which-key "org commands")
+    "oa"  '(org-agenda :which-key "agenda")
+    "oc"  '(org-capture t :which-key "capture")
+    ;; hydra
+    "h" '(:ignore h :which-key "hydra commands")
+    "hf" '(hydra-text-scale/body :which-key "scale font size")
     )
-      (defun dot/straight-thaw-from-backup ()
-        (interactive)
-        (delete-file "~/.config/emacs/straight/versions/default.el")
-        (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
-        (straight-thaw-versions)
-    )
-
-  (use-package hydra
-   :defer t)
-
-  (defhydra hydra-text-scale (:timeout 4)
-    "scale font size"
-    ("k" text-scale-increase "increase")
-    ("j" text-scale-decrease "decrease")
-    ("q" nil "quit" :exit t))
-
-  (use-package general
-    :config
-    ;; leader key overrides for all modes (e.g. dired) in normal state
-    (general-override-mode)
-    (general-define-key
-      :states '(normal emacs)
-      :keymaps 'override
-      :prefix "SPC"
-      :non-normal-prefix "M-SPC"
-      "t" '(vterm-toggle :which-key "toggle vterm")
-      "p" '(projectile-switch-project :which-key "switch project")
-      "b" '(consult-buffer :which-key "switch buffer")
-      "k" '(kill-current-buffer :which-key "kill current buffer")
-      "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
-      ;; magit
-      "SPC" '(magit-status :which-key "magit status")
-      "g"   '(:ignore g :which-key "magit commands")
-      "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
-      "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
-      "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
-      "gm"  '(vc-refresh-state :which-key "update modeline vc state")
-      ;; find file ops
-      "f" '(:ignore f :which-key "file commands")
-      "fd" '(projectile-find-file-in-known-projects :which-key "fd files ~/projects")
-      "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
-      "fr" '(consult-recent-file :which-key "find recent files")
-      "ff" '(projectile-find-file :which-key "find project files")
-      ;; linting
-      "l" '(:ignore l :which-key "linting commands")
-      "ll" '(flycheck-list-errors :which-key "list errors")
-      "lj" '(flycheck-next-error :which-key "next error")
-      "lk" '(flycheck-previous-error :which-key "previous error")
-      ;; org
-      "o" '(:ignore o :which-key "org commands")
-      "oa"  '(org-agenda :which-key "agenda")
-      "oc"  '(org-capture t :which-key "capture")
-      ;; hydra
-      "h" '(:ignore h :which-key "hydra commands")
-      "hf" '(hydra-text-scale/body :which-key "scale font size")
-      )
-    ;; non leader key overrides
-    (general-define-key
-      :states '(normal visual emacs)
-      :keymaps 'override
-      "C-k" 'evil-window-up
-      "C-j" 'evil-window-down
-      "C-h" 'evil-window-left
-      "C-l" 'evil-window-right
-      "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
-    )
-    ;; non-override global mapping for normal + insert state
-    (general-define-key
-      :states '(normal insert visual emacs)
-      "<f12>"   'dot/toggle-maximize-buffer
-      "C-s"   'consult-line
-      "C-S-s" 'consult-outline
-      "C-M-p" 'consult-yank-replace
-      "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-      ;; TODO consult-register
-    )
-    ;; evil normal/visual mapping
-    ;; (general-evil-setup)
-    (general-define-key
-      :states '(normal visual)
-      "s" 'avy-goto-char-2-below
-      "S" 'avy-goto-char-2-above
-      "gl" 'avy-goto-line
-      "gw" 'avy-goto-word-1
-      "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
-      "-" 'dired-jump
-      "_" 'dot/split-dired-jump)
-    ;; org-mod
-    (general-define-key
-      :states 'normal
-      :keymaps 'org-mode-map
-      "K" 'org-up-element
-    )
-    ;; dired-mod
-    (general-define-key
-      :states  'normal
-      :keymaps 'dired-mode-map
-      ;; reuse dired buffer
-      "RET"    'dired-find-alternate-file
-      "-"      (lambda () (interactive) (find-alternate-file ".."))
-    )
-    ;; vterm-mod
-    (general-define-key
-      :states  'insert
-      :keymaps 'vterm-mode-map
-      "C-c"    'vterm-send-C-c
-    )
-
-    ;; yasnippet
-    ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
-    (general-define-key
-      :states '(insert)
-      :keymaps 'yas-minor-mode-map
-      "M-TAB" #'yas-expand
-      "SPC" yas-maybe-expand
-    )
+  ;; non leader key overrides
+  (general-define-key
+    :states '(normal visual emacs)
+    :keymaps 'override
+    "C-k" 'evil-window-up
+    "C-j" 'evil-window-down
+    "C-h" 'evil-window-left
+    "C-l" 'evil-window-right
+    "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
   )
+  ;; non-override global mapping for normal + insert state
+  (general-define-key
+    :states '(normal insert visual emacs)
+    "<f12>"   'dot/toggle-maximize-buffer
+    "C-s"   'consult-line
+    "C-S-s" 'consult-outline
+    "C-M-p" 'consult-yank-replace
+    "C-M-r" '(consult-ripgrep :which-key "ripgrep")
+    ;; TODO consult-register
+  )
+  ;; evil normal/visual mapping
+  ;; (general-evil-setup)
+  (general-define-key
+    :states '(normal visual)
+    "s" 'avy-goto-char-2-below
+    "S" 'avy-goto-char-2-above
+    "gl" 'avy-goto-line
+    "gw" 'avy-goto-word-1
+    "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
+    "-" 'dired-jump
+    "_" 'dot/split-dired-jump)
+  ;; org-mod
+  (general-define-key
+    :states 'normal
+    :keymaps 'org-mode-map
+    "K" 'org-up-element
+  )
+  ;; dired-mod
+  (general-define-key
+    :states  'normal
+    :keymaps 'dired-mode-map
+    ;; reuse dired buffer
+    "RET"    'dired-find-alternate-file
+    "-"      (lambda () (interactive) (find-alternate-file ".."))
+  )
+  ;; vterm-mod
+  (general-define-key
+    :states  'insert
+    :keymaps 'vterm-mode-map
+    "C-c"    'vterm-send-C-c
+  )
+
+  ;; yasnippet
+  ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
+  (general-define-key
+    :states '(insert)
+    :keymaps 'yas-minor-mode-map
+    "M-TAB" #'yas-expand
+    "SPC" yas-maybe-expand
+  )
+)
