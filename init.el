@@ -200,15 +200,18 @@
     "gh" 'dired-hide-dotfiles-mode))
 
 (use-package orderless
+  :demand t
   :custom (completion-styles '(orderless)))
 
-(use-package selectrum :init (selectrum-mode)
-:config
-(setq selectrum-refine-candidates-function #'orderless-filter)
-(setq selectrum-highlight-candidates-function #'orderless-highlight-matches))
+(use-package selectrum :config (selectrum-mode +1))
 
 (use-package prescient :config (prescient-persist-mode))
-(use-package selectrum-prescient :init (selectrum-prescient-mode) :after selectrum)
+(use-package selectrum-prescient :after selectrum :config (selectrum-prescient-mode))
+
+;; put it here so prescient doesn't overwrite selectrum highlight
+(setq selectrum-refine-candidates-function #'orderless-filter
+      selectrum-highlight-candidates-function #'orderless-highlight-matches)
+
 (use-package company-prescient :init (company-prescient-mode) :after company)
 
 (use-package consult
@@ -309,7 +312,7 @@
   )
 
 (use-package org
-  :demand t         ;; remove this for better startup time
+  :demand t
   :commands (org-capture org-agenda)
   :hook (org-mode . dot/org-mode-setup)
   :config
