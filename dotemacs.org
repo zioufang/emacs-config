@@ -44,11 +44,16 @@ debug errored out config:
 #+end_src
 ** Native Comp
 #+begin_src emacs-lisp
-(setq comp-speed 2)
-(setq comp-async-report-warnings-errors nil)
 (when (boundp 'comp-eln-load-path)
   (setcar comp-eln-load-path
           (expand-file-name "eln-cache/" user-emacs-directory)))
+(when (fboundp 'native-compile-async)
+  (setq comp-deferred-compilation t
+        comp-deferred-compilation-deny-list '("evil*\\.el$")
+        comp-speed 2
+        comp-async-report-warnings-errors nil
+        native-comp-async-report-warnings-errors nil
+  ))
 #+end_src
 ** Package Manager
 *** package
@@ -185,13 +190,13 @@ install font =Cantarell=
           search-ring
           regexp-search-ring))
 
-  ;; clipboard history, shorter for cleaner counsel-yank-pop
+  ;; clipboard history, shorter for cleaner history
   (setq kill-ring-max 20)
 
   ;; enable recentf
   (recentf-mode 1)
-  (setq recentf-max-menu-items 50)
-  (setq recentf-max-saved-items 50)
+  (setq recentf-max-menu-items 200)
+  (setq recentf-max-saved-items 200)
 
   ;; auto remove trailing whitespace
   (setq show-trailing-whitespace t)
