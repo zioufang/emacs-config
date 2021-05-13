@@ -202,11 +202,14 @@
 (use-package orderless
   :custom (completion-styles '(orderless)))
 
-(use-package selectrum :init (selectrum-mode +1))
+(use-package selectrum :init (selectrum-mode)
+:config
+(setq selectrum-refine-candidates-function #'orderless-filter)
+(setq selectrum-highlight-candidates-function #'orderless-highlight-matches))
 
-(use-package prescient :config (prescient-persist-mode +1))
-(use-package selectrum-prescient :init (selectrum-prescient-mode +1) :after selectrum)
-(use-package company-prescient :init (company-prescient-mode +1) :after company)
+(use-package prescient :config (prescient-persist-mode))
+(use-package selectrum-prescient :init (selectrum-prescient-mode) :after selectrum)
+(use-package company-prescient :init (company-prescient-mode) :after company)
 
 (use-package consult
   :demand t
