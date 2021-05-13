@@ -547,22 +547,14 @@ list emacs colour name with =list-colors-display=
 ** Babel
 #+begin_src emacs-lisp
   (with-eval-after-load 'org
-    (require 'ob-go)
     (org-babel-do-load-languages
       'org-babel-load-languages
       '((emacs-lisp . t)
-        (python . t)
-        (go . t)
-        (ein . t)
         ))
     (setq org-confirm-babel-evaluate nil)
-
+    (setq org-src-preserve-indentation t)
     (require 'org-tempo)
     (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-    (add-to-list 'org-structure-template-alist '("py" . "src python"))
-    (add-to-list 'org-structure-template-alist '("np" . "src ein-python :session localhost
-    "))
-    (add-to-list 'org-structure-template-alist '("go" . "src go"))
     (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
   )
 #+end_src
