@@ -620,7 +620,24 @@ func = <<the-func()>>
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
+  ;; to black hole
+  (define-key evil-normal-state-map "x" 'delete-forward-char)
+  (define-key evil-normal-state-map "X" 'delete-backward-char)
+  (evil-define-operator evil-delete-blackhole (beg end type register yank-handler)
+    (interactive "<R><y>")
+    (evil-delete beg end type ?_ yank-handler))
+  (evil-define-operator evil-change-blackhole (beg end type register yank-handler)
+    (interactive "<R><y>")
+    (evil-change beg end type ?_ yank-handler))
+  (evil-define-operator evil-change-line-blackhole (beg end type register yank-handler)
+    :motion evil-end-of-line
+    (interactive "<R><x><y>")
+    (evil-change beg end type ?_ yank-handler #'evil-delete-line))
+  (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
+  (define-key evil-normal-state-map (kbd "c") 'evil-change-blackhole)
+  (define-key evil-normal-state-map (kbd "C") 'evil-change-line-blackhole)
 )
+
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
 ;; define an ex kestroke to a func
 ;; (eval-after-load 'evil-ex
