@@ -1150,8 +1150,10 @@ useful default keybindings:
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(projectile-find-file :which-key "find project files")
-    ;; linting
+    ;; lsp, linting etc.
     "l" '(:ignore l :which-key "linting commands")
+    "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
+    "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
     "ll" '(flycheck-list-errors :which-key "list errors")
     "lj" '(flycheck-next-error :which-key "next error")
     "lk" '(flycheck-previous-error :which-key "previous error")
@@ -1215,6 +1217,12 @@ useful default keybindings:
     "C-c"    'vterm-send-C-c
   )
 
+  ;; lsp-ui-doc-frame
+  (general-define-key
+    :states  'normal
+    :keymaps 'lsp-ui-doc-frame-mode-map
+    "q"    'lsp-ui-doc-unfocus-frame
+  )
   ;; yasnippet
   ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
   (general-define-key
