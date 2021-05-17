@@ -302,8 +302,9 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
 )
 
 #+end_src
-** Embark (no tangle, crashing with native comp)
-#+begin_src emacs-lisp :tangle no
+** Embark
+Note: it crashes randomly with native comp as of 2021-05-18
+#+begin_src emacs-lisp
 (defun embark-act-noquit ()
   "Run action but don't quit the minibuffer afterwards."
   (interactive)
@@ -329,6 +330,7 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   (:map minibuffer-local-map
   (("C-c" . embark-act)
    ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
+   ("C-e" . embark-export )
     :map embark-general-map
     ("C-v" . dot/message-var)
 ))
@@ -1124,6 +1126,12 @@ useful default keybindings:
   (copy-file "~/projects/emacs-config/default.el" "~/.config/emacs/straight/versions/default.el" )
   (straight-thaw-versions)
 )
+
+(defun dot/wgrep-commit
+  (interactive)
+  (wgrep-finish-edit)
+  (wgrep-save-all-buffers)
+)
 #+end_src
 ** Hydra
 #+begin_src emacs-lisp
@@ -1245,6 +1253,12 @@ useful default keybindings:
     :keymaps 'yas-minor-mode-map
     "M-TAB" #'yas-expand
     "SPC" yas-maybe-expand
+  )
+  ;;
+  (general-define-key
+    :states  'normal
+    :keymaps 'wgrep-mode-map
+    "C-c C-c"    'dot/wgrep-commit
   )
 )
 #+end_src
