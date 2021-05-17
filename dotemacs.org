@@ -449,6 +449,7 @@ list emacs colour name with =list-colors-display=
   :commands (org-capture org-agenda)
   :hook (org-mode . dot/org-mode-setup)
   :config
+  (setq org-startup-folded t)
   (setq org-ellipsis " ▾")
   (dot/org-font-setup)
   (setq org-agenda-files
