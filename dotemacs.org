@@ -1230,11 +1230,12 @@ useful default keybindings:
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
-    "C-s"   'consult-line
-    "C-M-s" 'consult-outline
+    "C-s"   'save-buffer
+    "C-/"   'consult-line
+    "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-    ;; shell
+    "C-M-j" 'query-replace
     "C-M-7"   'dot/projectile-shell
     ;; TODO consult-register
   )
