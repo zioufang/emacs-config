@@ -207,6 +207,14 @@ install font =Cantarell=
 
 ;; case sensitive for query-replace
 (setq case-fold-search  nil)
+
+;; use interactive shell
+(setq async-shell-command-buffer 'rename-buffer
+      shell-command-switch "-ic")
+
+;; forcing split right
+(setq split-height-threshold nil
+      split-width-threshold 80)
 #+end_src
 * UI
 ** Tab Bar
@@ -1133,10 +1141,18 @@ useful default keybindings:
   (straight-thaw-versions)
 )
 
-(defun dot/wgrep-commit
+(defun dot/wgrep-commit ()
   (interactive)
   (wgrep-finish-edit)
   (wgrep-save-all-buffers)
+)
+
+(defun dot/projectile-shell ()
+  (interactive)
+  (projectile-with-default-dir (projectile-acquire-root)
+    (call-interactively #'async-shell-command))
+  (other-window 1)
+  (evil-normal-state)
 )
 #+end_src
 ** Hydra
@@ -1213,6 +1229,8 @@ useful default keybindings:
     "C-M-s" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
+    ;; shell
+    "M-&"   'dot/projectile-shell
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
