@@ -634,7 +634,7 @@ func = <<the-func()>>
     :motion evil-end-of-line
     (interactive "<R><x><y>")
     (evil-change beg end type ?_ yank-handler #'evil-delete-line))
-  (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
+  ;; (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
   (define-key evil-normal-state-map (kbd "c") 'evil-change-blackhole)
   (define-key evil-normal-state-map (kbd "C") 'evil-change-line-blackhole)
 )
@@ -687,7 +687,9 @@ func = <<the-func()>>
 )
 
 (use-package key-chord
-:hook (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+:hook
+(go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+(rust-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
 :config
 (key-chord-mode 1))
 #+end_src
@@ -701,6 +703,7 @@ use =ssh-add= to add keys first
 prefix key: =C-c l=
 #+begin_src emacs-lisp
 (use-package lsp-mode
+  :demand t
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
@@ -732,6 +735,7 @@ Useful functions:
 - =lsp-treemacs-error-list=
 #+begin_src emacs-lisp
 (use-package lsp-treemacs
+  :disabled
   :after lsp-mode)
 #+end_src
 *** breadcrumb on top (disabled)
@@ -880,13 +884,15 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 ** Misc
 #+begin_src emacs-lisp
 ;; Make sure emacs use the proper ENV VAR
-(use-package exec-path-from-shell)
-;; disable auto load as it is slow
+(use-package exec-path-from-shell
+:after vterm
+:config
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 ;; for daemon only
 (when (daemonp)
   (exec-path-from-shell-initialize))
+)
 
 ;; rainbow delimiter
 (use-package rainbow-delimiters
@@ -947,6 +953,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 
 ;; Hide the modeline for inferior python processes
 (use-package inferior-python-mode
+  :after python
   :ensure nil
   :straight nil
   :hook (inferior-python-mode . hide-mode-line-mode)
@@ -954,6 +961,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 
 ;; pyright, it detects venv/.venv automatically
 (use-package lsp-pyright
+  :after python
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp-deferred)))
@@ -1171,6 +1179,7 @@ useful default keybindings:
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(projectile-find-file :which-key "find project files")
+    "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "linting commands")
     "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
@@ -1201,7 +1210,7 @@ useful default keybindings:
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
     "C-s"   'consult-line
-    "C-S-s" 'consult-outline
+    "C-M-s" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
     ;; TODO consult-register
@@ -1236,6 +1245,7 @@ useful default keybindings:
     :states  'insert
     :keymaps 'vterm-mode-map
     "C-c"    'vterm-send-C-c
+    "<mouse-3>" 'vterm-yank  ;; right click yank
   )
 
   ;; lsp-ui-doc-frame

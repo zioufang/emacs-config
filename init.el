@@ -228,6 +228,48 @@
   (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
 
+(defun embark-act-noquit ()
+  "Run action but don't quit the minibuffer afterwards."
+  (interactive)
+  (let ((embark-quit-after-action nil))
+    (embark-act)))
+
+(defun dot/message-var (var)
+(message "Var: %s" var)
+)
+
+(use-package embark
+  :after selectrum
+  :bind
+  (:map minibuffer-local-map
+  (("C-c" . embark-act)
+   ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
+   ("C-e" . embark-export )
+    :map embark-general-map
+    ("C-v" . consult-buffer-other-window)
+))
+  :init
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+  (setq embark-action-indicator
+    (lambda (map _target)
+      (which-key--show-keymap "Embark" map nil nil 'no-paging)
+      #'which-key--hide-popup-ignore-command)
+    embark-become-indicator embark-action-indicator)
+  :config
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 (use-package marginalia
   :config
   (marginalia-mode))
@@ -316,6 +358,7 @@
   :commands (org-capture org-agenda)
   :hook (org-mode . dot/org-mode-setup)
   :config
+  (setq org-startup-folded t)
   (setq org-ellipsis " ▾")
   (dot/org-font-setup)
   (setq org-agenda-files
@@ -441,7 +484,24 @@
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
+  ;; to black hole
+  (define-key evil-normal-state-map "x" 'delete-forward-char)
+  (define-key evil-normal-state-map "X" 'delete-backward-char)
+  (evil-define-operator evil-delete-blackhole (beg end type register yank-handler)
+    (interactive "<R><y>")
+    (evil-delete beg end type ?_ yank-handler))
+  (evil-define-operator evil-change-blackhole (beg end type register yank-handler)
+    (interactive "<R><y>")
+    (evil-change beg end type ?_ yank-handler))
+  (evil-define-operator evil-change-line-blackhole (beg end type register yank-handler)
+    :motion evil-end-of-line
+    (interactive "<R><x><y>")
+    (evil-change beg end type ?_ yank-handler #'evil-delete-line))
+  ;; (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
+  (define-key evil-normal-state-map (kbd "c") 'evil-change-blackhole)
+  (define-key evil-normal-state-map (kbd "C") 'evil-change-line-blackhole)
 )
+
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
 ;; define an ex kestroke to a func
 ;; (eval-after-load 'evil-ex
@@ -488,13 +548,16 @@
 )
 
 (use-package key-chord
-:hook (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+:hook
+(go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+(rust-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
 :config
 (key-chord-mode 1))
 
 (setq tramp-default-method "ssh")
 
 (use-package lsp-mode
+  :demand t
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
@@ -518,6 +581,7 @@
 ))
 
 (use-package lsp-treemacs
+  :disabled
   :after lsp-mode)
 
 ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
@@ -632,13 +696,15 @@
 (use-package avy)
 
 ;; Make sure emacs use the proper ENV VAR
-(use-package exec-path-from-shell)
-;; disable auto load as it is slow
+(use-package exec-path-from-shell
+:after vterm
+:config
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 ;; for daemon only
 (when (daemonp)
   (exec-path-from-shell-initialize))
+)
 
 ;; rainbow delimiter
 (use-package rainbow-delimiters
@@ -694,6 +760,7 @@
 
 ;; Hide the modeline for inferior python processes
 (use-package inferior-python-mode
+  :after python
   :ensure nil
   :straight nil
   :hook (inferior-python-mode . hide-mode-line-mode)
@@ -701,6 +768,7 @@
 
 ;; pyright, it detects venv/.venv automatically
 (use-package lsp-pyright
+  :after python
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp-deferred)))
@@ -740,6 +808,14 @@
 :hook (go-mode . lsp-deferred)
 :config
 (require 'dap-go)
+)
+
+(use-package rust-mode
+:hook (rust-mode . lsp-deferred)
+:config
+(setq rust-format-on-save t)
+:custom
+  (lsp-rust-analyzer-cargo-watch-command "clippy")
 )
 
 (use-package terraform-mode :mode "\\.tf\\'")
@@ -832,6 +908,12 @@
   (straight-thaw-versions)
 )
 
+(defun dot/wgrep-commit
+  (interactive)
+  (wgrep-finish-edit)
+  (wgrep-save-all-buffers)
+)
+
 (use-package hydra
  :defer t)
 
@@ -868,8 +950,11 @@
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(projectile-find-file :which-key "find project files")
-    ;; linting
+    "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
+    ;; lsp, linting etc.
     "l" '(:ignore l :which-key "linting commands")
+    "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
+    "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
     "ll" '(flycheck-list-errors :which-key "list errors")
     "lj" '(flycheck-next-error :which-key "next error")
     "lk" '(flycheck-previous-error :which-key "previous error")
@@ -896,7 +981,7 @@
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
     "C-s"   'consult-line
-    "C-S-s" 'consult-outline
+    "C-M-s" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
     ;; TODO consult-register
@@ -931,8 +1016,15 @@
     :states  'insert
     :keymaps 'vterm-mode-map
     "C-c"    'vterm-send-C-c
+    "<mouse-3>" 'vterm-yank  ;; right click yank
   )
 
+  ;; lsp-ui-doc-frame
+  (general-define-key
+    :states  'normal
+    :keymaps 'lsp-ui-doc-frame-mode-map
+    "q"    'lsp-ui-doc-unfocus-frame
+  )
   ;; yasnippet
   ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
   (general-define-key
@@ -940,5 +1032,11 @@
     :keymaps 'yas-minor-mode-map
     "M-TAB" #'yas-expand
     "SPC" yas-maybe-expand
+  )
+  ;;
+  (general-define-key
+    :states  'normal
+    :keymaps 'wgrep-mode-map
+    "C-c C-c"    'dot/wgrep-commit
   )
 )
