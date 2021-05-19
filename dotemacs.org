@@ -315,15 +315,6 @@ Note: it crashes randomly with native comp as of 2021-05-18
 (message "Var: %s" var)
 )
 
-;; DOES NOT work
-(defun dot/open-right (filename)
-  (interactive "MFilename: ")
-  (split-window-right)
-  (other-window 1)
-  (balance-windows)
-  (find-file filename)
-  )
-
 (use-package embark
   :after selectrum
   :bind
@@ -332,7 +323,7 @@ Note: it crashes randomly with native comp as of 2021-05-18
    ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
    ("C-e" . embark-export )
     :map embark-general-map
-    ("C-v" . dot/message-var)
+    ("C-v" . consult-buffer-other-window)
 ))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -348,6 +339,13 @@ Note: it crashes randomly with native comp as of 2021-05-18
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 ** Marginalia
 #+begin_src emacs-lisp
