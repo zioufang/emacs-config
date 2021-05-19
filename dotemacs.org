@@ -128,6 +128,7 @@ install font =Cantarell=
 (setq auto-revert-avoid-polling t)
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
+(global-set-key (kbd "<mouse-3>") 'yank)
 
 (setq default-directory "~/projects")
 (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
@@ -1234,7 +1235,7 @@ useful default keybindings:
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
     ;; shell
-    "M-&"   'dot/projectile-shell
+    "C-M-7"   'dot/projectile-shell
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
