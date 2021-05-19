@@ -330,8 +330,11 @@ Note: it crashes randomly with native comp as of 2021-05-18
   (("C-c" . embark-act)
    ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
    ("C-e" . embark-export )
+   ("C-v" . consult-buffer-other-window)
+   ("C-r" . previous-matching-history-element) ;; for shell-command
     :map embark-general-map
     ("C-v" . consult-buffer-other-window)
+    ("C-e" . embark-export )
 ))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -1024,6 +1027,7 @@ https://rust-analyzer.github.io/manual.html#building-from-source
 =git clone https://github.com/rust-analyzer/rust-analyzer.git=
 =cargo xtask install --server=
 Note: =rustup component add rust-analyzer= gave out error =exec format error=:
+=lsp-execute-code-action= to get list of auto-import
 #+begin_src emacs-lisp
 (use-package rust-mode
 :hook (rust-mode . lsp-deferred)
@@ -1068,7 +1072,7 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 * Keybindings
 useful default keybindings:
 - =C-x C-f= to find file or create new file
-- =C-x k= kill auffer
+- =C-x k= kill buffer
 ** Helper Functions
 #+begin_src emacs-lisp
 (defun dot/go-to-dotemacs ()
