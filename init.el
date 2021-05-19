@@ -85,6 +85,7 @@
 (setq auto-revert-avoid-polling t)
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
+(global-set-key (kbd "<mouse-3>") 'yank)
 
 (setq default-directory "~/projects")
 (setq max-lisp-eval-depth 10000)  ;; for lsp-mode
@@ -164,6 +165,14 @@
 
 ;; case sensitive for query-replace
 (setq case-fold-search  nil)
+
+;; use interactive shell
+(setq async-shell-command-buffer 'rename-buffer
+      shell-command-switch "-ic")
+
+;; forcing split right
+(setq split-height-threshold nil
+      split-width-threshold 80)
 
 (setq tab-bar-new-tab-to `rightmost
       tab-bar-show t
@@ -245,8 +254,11 @@
   (("C-c" . embark-act)
    ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
    ("C-e" . embark-export )
+   ("C-v" . consult-buffer-other-window)
+   ("C-r" . previous-matching-history-element) ;; for shell-command
     :map embark-general-map
     ("C-v" . consult-buffer-other-window)
+    ("C-e" . embark-export )
 ))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -908,10 +920,18 @@
   (straight-thaw-versions)
 )
 
-(defun dot/wgrep-commit
+(defun dot/wgrep-commit ()
   (interactive)
   (wgrep-finish-edit)
   (wgrep-save-all-buffers)
+)
+
+(defun dot/projectile-shell ()
+  (interactive)
+  (projectile-with-default-dir (projectile-acquire-root)
+    (call-interactively #'async-shell-command))
+  (other-window 1)
+  (evil-normal-state)
 )
 
 (use-package hydra
@@ -984,6 +1004,8 @@
     "C-M-s" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
+    ;; shell
+    "C-M-7"   'dot/projectile-shell
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
