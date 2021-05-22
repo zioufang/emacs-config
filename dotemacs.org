@@ -211,7 +211,8 @@ install font =Cantarell=
 
 ;; use interactive shell
 (setq async-shell-command-buffer 'rename-buffer
-      shell-command-switch "-ic")
+      ;; bash -ic, zsh -ics
+      shell-command-switch "-ics")
 
 ;; forcing split right
 (setq split-height-threshold nil
@@ -280,7 +281,22 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
 #+end_src
 ** Selectrum
 #+begin_src emacs-lisp
-(use-package selectrum :config (selectrum-mode +1))
+(defun dot/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent
+folder, otherwise delete a character backward"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+      (if (string-match-p "/." (minibuffer-contents))
+          (zap-up-to-char (- arg) ?/)
+        (delete-minibuffer-contents))
+      (delete-backward-char arg)))
+
+(use-package selectrum
+:demand t
+:bind (:map minibuffer-local-map
+       ("M-<backspace>" . dot/minibuffer-backward-kill))
+:config (selectrum-mode +1))
 #+end_src
 ** Prescient
 #+begin_src emacs-lisp
@@ -295,10 +311,14 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
 
 #+end_src
 ** Consult
+- =consult-minor-mode-menu= use =i SPC= to narrow to active minor modes
 #+begin_src emacs-lisp
 (use-package consult
   :demand t
   :after projectile
+  :bind
+  (:map minibuffer-local-map
+  (("C-r" . consult-history)))
   :config
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root)
@@ -310,6 +330,7 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
 
+(use-package consult-lsp)
 #+end_src
 ** Embark
 Note: it crashes randomly with native comp as of 2021-05-18
@@ -328,14 +349,11 @@ Note: it crashes randomly with native comp as of 2021-05-18
   :after selectrum
   :bind
   (:map minibuffer-local-map
-  (("C-c" . embark-act)
-   ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
-   ("C-e" . embark-export )
-   ("C-v" . consult-buffer-other-window)
-   ("C-r" . previous-matching-history-element) ;; for shell-command
+  (("C-f" . embark-act)
+   ;; ("C-M-e" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
     :map embark-general-map
     ("C-v" . consult-buffer-other-window)
-    ("C-e" . embark-export )
+    ("O" . consult-file-externally)
 ))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -649,6 +667,8 @@ func = <<the-func()>>
   ;; (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
   (define-key evil-normal-state-map (kbd "c") 'evil-change-blackhole)
   (define-key evil-normal-state-map (kbd "C") 'evil-change-line-blackhole)
+  ;; (define-key evil-normal-state-map "Q" (kbd "@q"))
+  (define-key evil-normal-state-map "Q" (lambda () (interactive) (evil-execute-macro 1 last-kbd-macro)))
 )
 
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
@@ -738,6 +758,7 @@ prefix key: =C-c l=
       lsp-ui-sideline-show-hover nil
       lsp-ui-sideline-show-code-actions nil
       lsp-ui-doc-enable nil
+      lsp-ui-doc-max-height 50
 ))
 #+end_src
 *** lsp-tree
@@ -1203,11 +1224,10 @@ useful default keybindings:
     "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "linting commands")
-    "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
+    "ll" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
-    "ll" '(flycheck-list-errors :which-key "list errors")
-    "lj" '(flycheck-next-error :which-key "next error")
-    "lk" '(flycheck-previous-error :which-key "previous error")
+    "le" '(consult-lsp-diagnostics :which-key "list errors")
+    ;; "le" '(flycheck-list-errors :which-key "list errors")
     ;; org
     "o" '(:ignore o :which-key "org commands")
     "oa"  '(org-agenda :which-key "agenda")
@@ -1230,13 +1250,12 @@ useful default keybindings:
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
-    "C-s"   'save-buffer
+    "C-s"   '(lambda () (interactive) (evil-force-normal-state) (save-buffer))
     "C-/"   'consult-line
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-    "C-M-j" 'query-replace
-    "C-M-7"   'dot/projectile-shell
+    "M-&"   'dot/projectile-shell
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
