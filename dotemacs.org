@@ -389,6 +389,8 @@ Note: it crashes randomly with native comp as of 2021-05-18
 #+begin_src emacs-lisp
 ;; Theme
 (use-package doom-themes
+  :custom
+  (doom-gruvbox-dark-variant "hard")
   :config
   (load-theme 'doom-gruvbox t))
 
