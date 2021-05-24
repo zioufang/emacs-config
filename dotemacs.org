@@ -253,8 +253,10 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :ensure nil
   :straight nil
   :hook (dired-mode . dired-hide-details-mode)
+  :bind (:map dired-mode-map
+       ("RET" . dired-find-alternate-file)
+       ("-" . (lambda () (interactive) (find-alternate-file ".."))))
   :commands (dired dired-jump)
-  :bind (("C-x C-d" . dired-jump))
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
@@ -753,6 +755,9 @@ prefix key: =C-c l=
 #+begin_src emacs-lisp
 (use-package lsp-ui
 :after lsp-mode
+:bind
+  (:map lsp-ui-doc-frame-mode-map
+    ("q" . lsp-ui-doc-unfocus-frame))
 :init
 (setq lsp-ui-sideline-show-diagnostics t
       lsp-ui-sideline-show-hover nil
@@ -876,7 +881,19 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 #+end_src
 ** Wgrep
 #+begin_src emacs-lisp
-(use-package wgrep)
+(defun dot/wgrep-commit ()
+  (interactive)
+  (wgrep-finish-edit)
+  (wgrep-save-all-buffers)
+)
+
+(use-package wgrep
+  :bind
+  (:map wgrep-mode-map
+    ("C-c C-c" . dot/wgrep-commit))
+  (:map grep-mode-map
+    ("C-c C-w" . wgrep-change-to-wgrep-mode))
+)
 #+end_src
 ** Vterm
 #+begin_src emacs-lisp
@@ -1167,12 +1184,6 @@ useful default keybindings:
   (straight-thaw-versions)
 )
 
-(defun dot/wgrep-commit ()
-  (interactive)
-  (wgrep-finish-edit)
-  (wgrep-save-all-buffers)
-)
-
 (defun dot/projectile-shell ()
   (interactive)
   (projectile-with-default-dir (projectile-acquire-root)
@@ -1225,7 +1236,7 @@ useful default keybindings:
     "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "linting commands")
-    "lj" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
+    "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
     "ll" '(consult-lsp-diagnostics :which-key "list errors")
     ;; "le" '(flycheck-list-errors :which-key "list errors")
@@ -1270,33 +1281,21 @@ useful default keybindings:
     "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
     "-" 'dired-jump
     "_" 'dot/split-dired-jump)
+)
+#+end_src
+*** mode specific
+#+begin_src emacs-lisp
   ;; org-mod
   (general-define-key
     :states 'normal
     :keymaps 'org-mode-map
     "K" 'org-up-element
   )
-  ;; dired-mod
-  (general-define-key
-    :states  'normal
-    :keymaps 'dired-mode-map
-    ;; reuse dired buffer
-    "RET"    'dired-find-alternate-file
-    "-"      (lambda () (interactive) (find-alternate-file ".."))
-  )
   ;; vterm-mod
   (general-define-key
     :states  'insert
     :keymaps 'vterm-mode-map
     "C-c"    'vterm-send-C-c
-    "<mouse-3>" 'vterm-yank  ;; right click yank
-  )
-
-  ;; lsp-ui-doc-frame
-  (general-define-key
-    :states  'normal
-    :keymaps 'lsp-ui-doc-frame-mode-map
-    "q"    'lsp-ui-doc-unfocus-frame
   )
   ;; yasnippet
   ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
@@ -1306,13 +1305,7 @@ useful default keybindings:
     "M-TAB" #'yas-expand
     "SPC" yas-maybe-expand
   )
-  ;;
-  (general-define-key
-    :states  'normal
-    :keymaps 'wgrep-mode-map
-    "C-c C-c"    'dot/wgrep-commit
-  )
-)
 #+end_src
 * Todos
 ** gcmh: garbage collector hack
+** origami for folding
