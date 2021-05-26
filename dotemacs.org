@@ -376,8 +376,8 @@ Note: it crashes randomly with native comp as of 2021-05-18
 (use-package embark-consult
   :ensure t
   :after (embark consult)
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
+  ;; :hook (embark-collect-mode . consult-preview-at-point-mode)
+)
 #+end_src
 ** Marginalia
 #+begin_src emacs-lisp
@@ -757,9 +757,6 @@ prefix key: =C-c l=
 #+begin_src emacs-lisp
 (use-package lsp-ui
 :after lsp-mode
-:bind
-  (:map lsp-ui-doc-frame-mode-map
-    ("q" . lsp-ui-doc-unfocus-frame))
 :init
 (setq lsp-ui-sideline-show-diagnostics t
       lsp-ui-sideline-show-hover nil
@@ -795,15 +792,18 @@ Useful functions:
   ;; :hook
   ;; (lsp-mode . dot/init-company-lsp)
   :bind (:map company-active-map
-         ("<tab>" . company-complete-common-or-cycle))
+         ("<tab>" . company-complete-common-or-cycle)
+         ("C-c" . company-complete-selection)
+         ("RET" . company-complete-selection)
+        )
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-backends '(company-capf))
   (company-minimum-prefix-length 2)
-  (company-idle-delay 0.0))
+  (company-idle-delay 0.0)
   :config
-  (global-company-mode)
+  (global-company-mode))
 
 (use-package company-box
   :hook (company-mode . company-box-mode))
@@ -1058,8 +1058,8 @@ https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-lsp-m
 
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
-:config
-(require 'dap-go)
+;; :config
+;; (require 'dap-go)
 )
 #+end_src
 ** Rust
@@ -1237,7 +1237,8 @@ useful default keybindings:
     "ff" '(projectile-find-file :which-key "find project files")
     "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
-    "l" '(:ignore l :which-key "linting commands")
+    "l" '(:ignore l :which-key "lsp commands")
+    "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
     "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
     "ll" '(consult-lsp-diagnostics :which-key "list errors")
