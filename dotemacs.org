@@ -786,15 +786,20 @@ Useful functions:
 #+end_src
 ** Company
 #+begin_src emacs-lisp
+(defun dot/company-complete ()
+  "Insert the selected candidate or the first if none are selected."
+  (interactive)
+  (if company-selection
+      (company-complete-selection)
+    (company-complete-number 1)))
+
 ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
 (use-package company
   :after lsp-mode
   ;; :hook
   ;; (lsp-mode . dot/init-company-lsp)
   :bind (:map company-active-map
-         ("<tab>" . company-complete-common-or-cycle)
-         ("C-c" . company-complete-selection)
-         ("RET" . company-complete-selection)
+         ("<tab>" . dot/company-complete)
         )
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
