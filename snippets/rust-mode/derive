@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: #[derive(Trait)]
+# key: <d
+# --
+#[derive(${1:Trait})]

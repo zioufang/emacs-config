@@ -1,7 +1,7 @@
 # -*- mode: snippet -*-
 # name: if error
-# key: ie;
+# key: <e
 # --
-if err != nil {
+if ${1:statement}err != nil {
   $0
 }
