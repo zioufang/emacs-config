@@ -168,7 +168,8 @@
 
 ;; use interactive shell
 (setq async-shell-command-buffer 'rename-buffer
-      shell-command-switch "-ic")
+      ;; bash -ic, zsh -ics
+      shell-command-switch "-ics")
 
 ;; forcing split right
 (setq split-height-threshold nil
@@ -188,8 +189,10 @@
   :ensure nil
   :straight nil
   :hook (dired-mode . dired-hide-details-mode)
+  :bind (:map dired-mode-map
+       ("RET" . dired-find-alternate-file)
+       ("-" . (lambda () (interactive) (find-alternate-file ".."))))
   :commands (dired dired-jump)
-  :bind (("C-x C-d" . dired-jump))
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
   :config
@@ -212,7 +215,22 @@
   :demand t
   :custom (completion-styles '(orderless)))
 
-(use-package selectrum :config (selectrum-mode +1))
+(defun dot/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent
+folder, otherwise delete a character backward"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+      (if (string-match-p "/." (minibuffer-contents))
+          (zap-up-to-char (- arg) ?/)
+        (delete-minibuffer-contents))
+      (delete-backward-char arg)))
+
+(use-package selectrum
+:demand t
+:bind (:map minibuffer-local-map
+       ("M-<backspace>" . dot/minibuffer-backward-kill))
+:config (selectrum-mode +1))
 
 (use-package prescient :config (prescient-persist-mode))
 (use-package selectrum-prescient :after selectrum :config (selectrum-prescient-mode))
@@ -226,16 +244,32 @@
 (use-package consult
   :demand t
   :after projectile
+  :bind
+  (:map minibuffer-local-map
+  (("C-r" . consult-history)))
   :config
   (autoload 'projectile-project-root "projectile")
   (setq consult-project-root-function #'projectile-project-root)
   (setq consult-preview-key nil)
   (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
   :custom
+  (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
   (consult-buffer-filter '("^\*" "\\` " "magit*"))
   (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
+
+(use-package consult-lsp)
+
+(use-package affe
+  :straight (affe :type git :host github :repo "minad/affe")
+  :after orderless
+  :custom
+  (affe-find-command "fd . --type f --color=never")
+  :config
+  ;; Configure Orderless
+  (setq affe-regexp-function #'orderless-pattern-compiler
+        affe-highlight-function #'orderless-highlight-matches))
 
 (defun embark-act-noquit ()
   "Run action but don't quit the minibuffer afterwards."
@@ -251,14 +285,11 @@
   :after selectrum
   :bind
   (:map minibuffer-local-map
-  (("C-c" . embark-act)
-   ("C-M-c" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
-   ("C-e" . embark-export )
-   ("C-v" . consult-buffer-other-window)
-   ("C-r" . previous-matching-history-element) ;; for shell-command
+  (("C-e" . embark-act)
+   ;; ("C-M-e" . embark-act-noquit) ;; crash emacs with emacs@28 native comp
     :map embark-general-map
     ("C-v" . consult-buffer-other-window)
-    ("C-e" . embark-export )
+    ("O" . consult-file-externally)
 ))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -279,8 +310,8 @@
 (use-package embark-consult
   :ensure t
   :after (embark consult)
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
+  ;; :hook (embark-collect-mode . consult-preview-at-point-mode)
+)
 
 (use-package marginalia
   :config
@@ -288,6 +319,8 @@
 
 ;; Theme
 (use-package doom-themes
+  :custom
+  (doom-gruvbox-dark-variant "hard")
   :config
   (load-theme 'doom-gruvbox t))
 
@@ -512,6 +545,8 @@
   ;; (define-key evil-normal-state-map (kbd "d") 'evil-delete-blackhole)
   (define-key evil-normal-state-map (kbd "c") 'evil-change-blackhole)
   (define-key evil-normal-state-map (kbd "C") 'evil-change-line-blackhole)
+  ;; (define-key evil-normal-state-map "Q" (kbd "@q"))
+  (define-key evil-normal-state-map "Q" (lambda () (interactive) (evil-execute-macro 1 last-kbd-macro)))
 )
 
 ;; (define-key evil-normal-state-map (kbd "SPC S") (lambda () (evil-ex "%s/")))
@@ -590,11 +625,19 @@
       lsp-ui-sideline-show-hover nil
       lsp-ui-sideline-show-code-actions nil
       lsp-ui-doc-enable nil
+      lsp-ui-doc-max-height 50
 ))
 
 (use-package lsp-treemacs
   :disabled
   :after lsp-mode)
+
+(defun dot/company-complete ()
+  "Insert the selected candidate or the first if none are selected."
+  (interactive)
+  (if company-selection
+      (company-complete-selection)
+    (company-complete-number 1)))
 
 ;; enable globally and default backend is dabbrev-code only (doesn't seem to work in org)
 (use-package company
@@ -602,15 +645,16 @@
   ;; :hook
   ;; (lsp-mode . dot/init-company-lsp)
   :bind (:map company-active-map
-         ("<tab>" . company-complete-common-or-cycle))
+         ("<tab>" . dot/company-complete)
+        )
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-backends '(company-capf))
   (company-minimum-prefix-length 2)
-  (company-idle-delay 0.0))
+  (company-idle-delay 0.0)
   :config
-  (global-company-mode)
+  (global-company-mode))
 
 (use-package company-box
   :hook (company-mode . company-box-mode))
@@ -675,7 +719,19 @@
   :config
   (setq git-gutter:update-interval 2))
 
-(use-package wgrep)
+(defun dot/wgrep-commit ()
+  (interactive)
+  (wgrep-finish-edit)
+  (wgrep-save-all-buffers)
+)
+
+(use-package wgrep
+  :bind
+  (:map wgrep-mode-map
+    ("C-c C-c" . dot/wgrep-commit))
+  (:map grep-mode-map
+    ("C-c C-w" . wgrep-change-to-wgrep-mode))
+)
 
 (use-package vterm
 :commands vterm
@@ -818,8 +874,8 @@
 
 (use-package go-mode
 :hook (go-mode . lsp-deferred)
-:config
-(require 'dap-go)
+;; :config
+;; (require 'dap-go)
 )
 
 (use-package rust-mode
@@ -920,12 +976,6 @@
   (straight-thaw-versions)
 )
 
-(defun dot/wgrep-commit ()
-  (interactive)
-  (wgrep-finish-edit)
-  (wgrep-save-all-buffers)
-)
-
 (defun dot/projectile-shell ()
   (interactive)
   (projectile-with-default-dir (projectile-acquire-root)
@@ -933,6 +983,10 @@
   (other-window 1)
   (evil-normal-state)
 )
+
+(defun dot/find-in-projects (&optional initial)
+  (interactive "P")
+    (affe-find "~/projects" initial))
 
 (use-package hydra
  :defer t)
@@ -955,6 +1009,7 @@
     "t" '(vterm-toggle :which-key "toggle vterm")
     "p" '(projectile-switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
+    "j" '(evil-switch-to-windows-last-buffer :which-key "switch last buffer")
     "k" '(kill-current-buffer :which-key "kill current buffer")
     "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
     ;; magit
@@ -966,18 +1021,18 @@
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
     "f" '(:ignore f :which-key "file commands")
-    "fd" '(projectile-find-file-in-known-projects :which-key "fd files ~/projects")
+    "fd" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
-    "ff" '(projectile-find-file :which-key "find project files")
+    "ff" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
-    "l" '(:ignore l :which-key "linting commands")
+    "l" '(:ignore l :which-key "lsp commands")
+    "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
     "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
-    "ll" '(flycheck-list-errors :which-key "list errors")
-    "lj" '(flycheck-next-error :which-key "next error")
-    "lk" '(flycheck-previous-error :which-key "previous error")
+    "ll" '(consult-lsp-diagnostics :which-key "list errors")
+    ;; "le" '(flycheck-list-errors :which-key "list errors")
     ;; org
     "o" '(:ignore o :which-key "org commands")
     "oa"  '(org-agenda :which-key "agenda")
@@ -1000,12 +1055,12 @@
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
-    "C-s"   'consult-line
-    "C-M-s" 'consult-outline
+    "C-s"   '(lambda () (interactive) (evil-force-normal-state) (save-buffer))
+    "C-/"   'consult-line
+    "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-    ;; shell
-    "C-M-7"   'dot/projectile-shell
+    "M-7"   'dot/projectile-shell
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
@@ -1019,33 +1074,19 @@
     "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
     "-" 'dired-jump
     "_" 'dot/split-dired-jump)
+)
+
   ;; org-mod
   (general-define-key
     :states 'normal
     :keymaps 'org-mode-map
     "K" 'org-up-element
   )
-  ;; dired-mod
-  (general-define-key
-    :states  'normal
-    :keymaps 'dired-mode-map
-    ;; reuse dired buffer
-    "RET"    'dired-find-alternate-file
-    "-"      (lambda () (interactive) (find-alternate-file ".."))
-  )
   ;; vterm-mod
   (general-define-key
     :states  'insert
     :keymaps 'vterm-mode-map
     "C-c"    'vterm-send-C-c
-    "<mouse-3>" 'vterm-yank  ;; right click yank
-  )
-
-  ;; lsp-ui-doc-frame
-  (general-define-key
-    :states  'normal
-    :keymaps 'lsp-ui-doc-frame-mode-map
-    "q"    'lsp-ui-doc-unfocus-frame
   )
   ;; yasnippet
   ;; http://joaotavora.github.io/yasnippet/snippet-expansion.general
@@ -1055,10 +1096,3 @@
     "M-TAB" #'yas-expand
     "SPC" yas-maybe-expand
   )
-  ;;
-  (general-define-key
-    :states  'normal
-    :keymaps 'wgrep-mode-map
-    "C-c C-c"    'dot/wgrep-commit
-  )
-)

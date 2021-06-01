@@ -327,12 +327,23 @@ folder, otherwise delete a character backward"
   (setq consult-preview-key nil)
   (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
   :custom
+  (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
   (consult-buffer-filter '("^\*" "\\` " "magit*"))
   (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
 
 (use-package consult-lsp)
+
+(use-package affe
+  :straight (affe :type git :host github :repo "minad/affe")
+  :after orderless
+  :custom
+  (affe-find-command "fd . --type f --color=never")
+  :config
+  ;; Configure Orderless
+  (setq affe-regexp-function #'orderless-pattern-compiler
+        affe-highlight-function #'orderless-highlight-matches))
 #+end_src
 ** Embark
 Note: it crashes randomly with native comp as of 2021-05-18
@@ -1198,6 +1209,10 @@ useful default keybindings:
   (other-window 1)
   (evil-normal-state)
 )
+
+(defun dot/find-in-projects (&optional initial)
+  (interactive "P")
+    (affe-find "~/projects" initial))
 #+end_src
 ** Hydra
 #+begin_src emacs-lisp
@@ -1236,10 +1251,10 @@ useful default keybindings:
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
     "f" '(:ignore f :which-key "file commands")
-    "fd" '(projectile-find-file-in-known-projects :which-key "fd files ~/projects")
+    "fd" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
-    "ff" '(projectile-find-file :which-key "find project files")
+    "ff" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
