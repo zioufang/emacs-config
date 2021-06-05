@@ -243,14 +243,15 @@ folder, otherwise delete a character backward"
 
 (use-package consult
   :demand t
-  :after projectile
   :bind
   (:map minibuffer-local-map
   (("C-r" . consult-history)))
   :config
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
-  (setq consult-preview-key nil)
+  (setq consult-project-root-function
+        (lambda ()
+          (when-let (project (project-current))
+            (car (project-roots project)))))
+  (setq consult-preview-key (kbd "M-p"))
   (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
@@ -873,12 +874,16 @@ folder, otherwise delete a character backward"
 (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
 (use-package go-mode
+:init
+(setq exec-path (append exec-path '("~/go/bin")))
 :hook (go-mode . lsp-deferred)
 ;; :config
 ;; (require 'dap-go)
 )
 
 (use-package rust-mode
+:init
+(setq exec-path (append exec-path '("~/.cargo/bin")))
 :hook (rust-mode . lsp-deferred)
 :config
 (setq rust-format-on-save t)
@@ -1015,7 +1020,7 @@ folder, otherwise delete a character backward"
     ;; magit
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
-    "gc"  '(magit-branch-or-checkout :which-key "checkout a branch")
+    "gc"  '(magit-branch-checkout :which-key "checkout a branch")
     "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
     "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
