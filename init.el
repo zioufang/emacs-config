@@ -683,6 +683,7 @@ folder, otherwise delete a character backward"
 
 ;; example https://www.reddit.com/r/emacs/comments/azddce/what_workflows_do_you_have_with_projectile_and/
 (use-package projectile
+  :disabled
   :demand t
   :diminish projectile-mode
   :config
@@ -955,12 +956,6 @@ folder, otherwise delete a character backward"
       (message "Killed %i prog buffer(s)." count)))
 )
 
-(defun dot/refresh-projectile-mode ()
-  "Turn projectile off and on to refresh"
-  (interactive)
-  (projectile-mode -1)
-  (projectile-mode))
-
 (defun dot/new-named-tab (name)
     "Create a new tab with name inputs, prefixed by its index"
     (interactive "MNew Tab Name: ")
@@ -981,17 +976,23 @@ folder, otherwise delete a character backward"
   (straight-thaw-versions)
 )
 
-(defun dot/projectile-shell ()
+(defun dot/find-in-projects (&optional initial)
+  (interactive "P")
+    (affe-find "~/projects" initial))
+
+(defun dot/shell-project-root ()
+  ; only works with git repo
   (interactive)
-  (projectile-with-default-dir (projectile-acquire-root)
+  (let ((default-directory (car (project-roots (project-current)))))
     (call-interactively #'async-shell-command))
   (other-window 1)
   (evil-normal-state)
 )
 
-(defun dot/find-in-projects (&optional initial)
-  (interactive "P")
-    (affe-find "~/projects" initial))
+(defun dot/switch-project ()
+  (interactive)
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (affe-find (concat "~/projects/" project-dir))))
 
 (use-package hydra
  :defer t)
@@ -1012,7 +1013,7 @@ folder, otherwise delete a character backward"
     :prefix "SPC"
     :non-normal-prefix "M-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
-    "p" '(projectile-switch-project :which-key "switch project")
+    "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
     "j" '(evil-switch-to-windows-last-buffer :which-key "switch last buffer")
     "k" '(kill-current-buffer :which-key "kill current buffer")
@@ -1065,7 +1066,7 @@ folder, otherwise delete a character backward"
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-    "M-7"   'dot/projectile-shell
+    "M-7"   'dot/shell-project-root
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
