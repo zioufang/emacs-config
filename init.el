@@ -175,16 +175,6 @@
 (setq split-height-threshold nil
       split-width-threshold 80)
 
-(setq tab-bar-new-tab-to `rightmost
-      tab-bar-show t
-      ;; tab-bar-new-tab-choice "~/projects"
-      tab-bar-new-tab-choice "*scratch*"
-)
-
-;; Get the current tab name for use in some other display when tab-bar-show = nil
-(defun dot/current-tab-name ()
-  (alist-get 'name (tab-bar--current-tab)))
-
 (use-package dired
   :ensure nil
   :straight nil
@@ -353,9 +343,6 @@ folder, otherwise delete a character backward"
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.2))
-
-(use-package command-log-mode
- :disabled)
 
 (defun dot/org-mode-setup ()
   (org-indent-mode)
@@ -765,6 +752,12 @@ folder, otherwise delete a character backward"
 
 (use-package avy)
 
+(use-package apheleia
+  :config
+  (setf (alist-get 'gofmt apheleia-formatters)
+        '("goimports"))
+  (apheleia-global-mode +1))
+
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell
 :after vterm
@@ -849,30 +842,21 @@ folder, otherwise delete a character backward"
   ;; (lsp-pyright-typechecking-mode "off")
 )
 
-;; (use-package lsp-python-ms
-;;   :ensure t
-;;   :init
-;;   (setq lsp-python-ms-auto-install-server t
-;;         lsp-python-ms-python-executable-cmd "python3")
-;;   :hook (python-mode . (lambda ()
-;;                           (require 'lsp-python-ms)
-;;                           (lsp-deferred))))
-
-  (use-package blacken
-    :after python
-    :custom (blacken-line-length 99))
+  ;; (use-package blacken
+  ;;   :after python
+  ;;   :custom (blacken-line-length 99))
 
   ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
-  (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+  ;; (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 
 (use-package ein :commands ein:run)
 
-(defun dot/lsp-go-before-save-hooks ()
-  ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
-  (setq gofmt-command "goimports")
-  (add-hook 'before-save-hook 'gofmt-before-save)
-  (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
+;; (defun dot/lsp-go-before-save-hooks ()
+;;   ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
+;;   (setq gofmt-command "goimports")
+;;   (add-hook 'before-save-hook 'gofmt-before-save)
+;;   (add-hook 'before-save-hook #'lsp-organize-imports t t))
+;; (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
 (use-package go-mode
 :init
@@ -902,6 +886,11 @@ folder, otherwise delete a character backward"
 
 (use-package dockerfile-mode
   :mode "\\Dockerfile\\'")
+
+(use-package typescript-mode
+  :mode "\\.ts\\'"
+  :config
+  (setq typescript-indent-level 2))
 
 ;; (use-package elfeed
 ;; :config
@@ -956,11 +945,11 @@ folder, otherwise delete a character backward"
       (message "Killed %i prog buffer(s)." count)))
 )
 
-(defun dot/new-named-tab (name)
-    "Create a new tab with name inputs, prefixed by its index"
-    (interactive "MNew Tab Name: ")
-    (tab-bar-new-tab)
-    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+;; (defun dot/new-named-tab (name)
+;;     "Create a new tab with name inputs, prefixed by its index"
+;;     (interactive "MNew Tab Name: ")
+;;     (tab-bar-new-tab)
+;;     (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
 (defun dot/straight-freeze-then-backup ()
   (interactive)

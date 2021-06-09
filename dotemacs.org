@@ -224,7 +224,7 @@ install font =Cantarell=
 - =tab-close=
 - =tab-rename=
 - =tab-bar-select-tab-by-name=
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (setq tab-bar-new-tab-to `rightmost
       tab-bar-show t
       ;; tab-bar-new-tab-choice "~/projects"
@@ -437,12 +437,6 @@ Note: it crashes randomly with native comp as of 2021-05-18
   :config
   (setq which-key-idle-delay 0.2))
 #+end_src
-** Command Log Mode
-#+begin_src emacs-lisp
-(use-package command-log-mode
- :disabled)
-#+end_src
-
 * Org Mode
 =Shift-Tab= to toggle headings for the whole doc
 ** Basic Setup
@@ -952,6 +946,18 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 #+begin_src emacs-lisp
 (use-package avy)
 #+end_src
+** Apheleia
+formatting codes, dependencies:
+=goimports=
+=black= for python
+=prettier= for js/ts/html etc
+#+begin_src emacs-lisp
+(use-package apheleia
+  :config
+  (setf (alist-get 'gofmt apheleia-formatters)
+        '("goimports"))
+  (apheleia-global-mode +1))
+#+end_src
 ** Misc
 #+begin_src emacs-lisp
 ;; Make sure emacs use the proper ENV VAR
@@ -1043,21 +1049,12 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
   ;; (lsp-pyright-typechecking-mode "off")
 )
 
-;; (use-package lsp-python-ms
-;;   :ensure t
-;;   :init
-;;   (setq lsp-python-ms-auto-install-server t
-;;         lsp-python-ms-python-executable-cmd "python3")
-;;   :hook (python-mode . (lambda ()
-;;                           (require 'lsp-python-ms)
-;;                           (lsp-deferred))))
-
-  (use-package blacken
-    :after python
-    :custom (blacken-line-length 99))
+  ;; (use-package blacken
+  ;;   :after python
+  ;;   :custom (blacken-line-length 99))
 
   ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
-  (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
+  ;; (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 #+end_src
 *** ipython notebook (no tangle)
 #+begin_src emacs-lisp tangle: no
@@ -1068,12 +1065,12 @@ install =gopls=, =godef= & =delve= first
 run =(dap-go-setup)= once to get the vscode extension
 https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-lsp-mode
 #+begin_src emacs-lisp
-(defun dot/lsp-go-before-save-hooks ()
-  ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
-  (setq gofmt-command "goimports")
-  (add-hook 'before-save-hook 'gofmt-before-save)
-  (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
+;; (defun dot/lsp-go-before-save-hooks ()
+;;   ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
+;;   (setq gofmt-command "goimports")
+;;   (add-hook 'before-save-hook 'gofmt-before-save)
+;;   (add-hook 'before-save-hook #'lsp-organize-imports t t))
+;; (add-hook 'go-mode-hook #'dot/lsp-go-before-save-hooks)
 
 (use-package go-mode
 :init
@@ -1120,6 +1117,15 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
   :mode "\\Dockerfile\\'")
+#+end_src
+** Typescript & Javascript
+#+begin_src emacs-lisp
+(use-package typescript-mode
+  :mode "\\.ts\\'"
+  :config
+  (setq typescript-indent-level 2))
+
+
 #+end_src
 * Chill
 ** Elfeed
@@ -1183,11 +1189,11 @@ useful default keybindings:
       (message "Killed %i prog buffer(s)." count)))
 )
 
-(defun dot/new-named-tab (name)
-    "Create a new tab with name inputs, prefixed by its index"
-    (interactive "MNew Tab Name: ")
-    (tab-bar-new-tab)
-    (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
+;; (defun dot/new-named-tab (name)
+;;     "Create a new tab with name inputs, prefixed by its index"
+;;     (interactive "MNew Tab Name: ")
+;;     (tab-bar-new-tab)
+;;     (tab-bar-rename-tab (concat (number-to-string (+ 1 (tab-bar--current-tab-index))) "-" name)))
 
 (defun dot/straight-freeze-then-backup ()
   (interactive)
@@ -1341,3 +1347,4 @@ useful default keybindings:
 ** gcmh: garbage collector hack
 ** origami for folding
 ** shell unicode
+** apheleia
