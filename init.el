@@ -892,6 +892,13 @@ folder, otherwise delete a character backward"
   :config
   (setq typescript-indent-level 2))
 
+(use-package web-mode
+  :mode "(\\.\\(html?\\|ejs\\|tsx\\|jsx\\)\\'"
+  :config
+  (setq-default web-mode-code-indent-offset 2)
+  (setq-default web-mode-markup-indent-offset 2)
+  (setq-default web-mode-attribute-indent-offset 2))
+
 ;; (use-package elfeed
 ;; :config
 ;; (setf url-queue-timeout 15)

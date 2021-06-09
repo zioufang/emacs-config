@@ -1127,6 +1127,15 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 
 
 #+end_src
+** HTML
+#+begin_src emacs-lisp
+(use-package web-mode
+  :mode "(\\.\\(html?\\|ejs\\|tsx\\|jsx\\)\\'"
+  :config
+  (setq-default web-mode-code-indent-offset 2)
+  (setq-default web-mode-markup-indent-offset 2)
+  (setq-default web-mode-attribute-indent-offset 2))
+#+end_src
 * Chill
 ** Elfeed
 #+begin_src emacs-lisp
