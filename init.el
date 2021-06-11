@@ -756,6 +756,10 @@ folder, otherwise delete a character backward"
   :config
   (setf (alist-get 'gofmt apheleia-formatters)
         '("goimports"))
+  (setf (alist-get 'black apheleia-formatters)
+        '("black" "-l" "119" "-"))
+  (setf (alist-get 'prettier apheleia-formatters)
+        '("npx" "prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
 
 ;; Make sure emacs use the proper ENV VAR
@@ -776,11 +780,11 @@ folder, otherwise delete a character backward"
 ;; Built-in Python utilities
 (use-package python
   :hook (python-mode . lsp-deferred)
-  :custom
-  (dap-python-debugger 'debugpy)
-  (dap-python-executable "python3")
+  ;; :custom
+  ;; (dap-python-debugger 'debugpy)
+  ;; (dap-python-executable "python3")
   :config
-  (require 'dap-python)
+  ;; (require 'dap-python)
   ;; Remove guess indent python message
   (setq python-indent-guess-indent-offset-verbose nil)
   ;; Use IPython when available or fall back to regular Python
@@ -889,8 +893,22 @@ folder, otherwise delete a character backward"
 
 (use-package typescript-mode
   :mode "\\.ts\\'"
+  :init
+  (setq exec-path (append exec-path '("/usr/local/bin")))
+  :hook (typescript-mode . lsp-deferred)
   :config
   (setq typescript-indent-level 2))
+
+(use-package js2-mode
+  :mode "\\.js\\'"
+  :init
+  (setq exec-path (append exec-path '("/usr/local/bin")))
+  :hook (js2-mode . lsp-deferred)
+  :config
+  ;; Use js2-mode for Node scripts
+  (add-to-list 'magic-mode-alist '("#!/usr/bin/env node" . js2-mode))
+  ;; Don't use built-in syntax checking
+  (setq js2-mode-show-strict-warnings nil))
 
 (use-package web-mode
   :mode "(\\.\\(html?\\|ejs\\|tsx\\|jsx\\)\\'"
