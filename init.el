@@ -583,10 +583,14 @@ folder, otherwise delete a character backward"
 )
 
 (use-package key-chord
-:hook
-(go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
-(rust-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
+;; :hook
+;; (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
+;; (rust-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
+;; (typescript-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
+;; (web-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
+;; (js-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
 :config
+(key-chord-define-global "{{" 'dot/insert-curly)
 (key-chord-mode 1))
 
 (setq tramp-default-method "ssh")
@@ -728,7 +732,7 @@ folder, otherwise delete a character backward"
 
 (use-package vterm-toggle
 :commands vterm
-:custom (vterm-toggle-scope 'frame)
+:custom (vterm-toggle-scope 'project)
 :config
 (setq vterm-toggle-fullscreen-p nil)
 ;; open vterm in dedicated bottom window
@@ -764,7 +768,8 @@ folder, otherwise delete a character backward"
 
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell
-:after vterm
+;; :after vterm
+:demand t
 :config
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
@@ -783,6 +788,8 @@ folder, otherwise delete a character backward"
   ;; :custom
   ;; (dap-python-debugger 'debugpy)
   ;; (dap-python-executable "python3")
+  :init
+  (setq exec-path (append exec-path '("/usr/local/bin")))
   :config
   ;; (require 'dap-python)
   ;; Remove guess indent python message
@@ -910,12 +917,26 @@ folder, otherwise delete a character backward"
   ;; Don't use built-in syntax checking
   (setq js2-mode-show-strict-warnings nil))
 
+
+(use-package prettier-js
+  :config
+  (setq prettier-js-show-errors nil))
+
 (use-package web-mode
-  :mode "(\\.\\(html?\\|ejs\\|tsx\\|jsx\\)\\'"
+  :mode (("\\.tsx\\'" . web-mode)
+         ("\\.html\\'" . web-mode)
+         ("\\.jsx\\'" . web-mode))
+  :hook (web-mode . lsp-deferred)
   :config
   (setq-default web-mode-code-indent-offset 2)
   (setq-default web-mode-markup-indent-offset 2)
   (setq-default web-mode-attribute-indent-offset 2))
+
+(use-package yaml-mode
+  :mode "\\.ya?ml\\'")
+
+(use-package lsp-java)
+(add-hook 'java-mode-hook #'lsp)
 
 ;; (use-package elfeed
 ;; :config
@@ -1029,9 +1050,10 @@ folder, otherwise delete a character backward"
     "t" '(vterm-toggle :which-key "toggle vterm")
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
-    "j" '(evil-switch-to-windows-last-buffer :which-key "switch last buffer")
-    "k" '(kill-current-buffer :which-key "kill current buffer")
-    "K" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
+    "j" '(next-buffer :which-key "next buffer")
+    "k" '(previous-buffer :which-key "previous buffer")
+    "q" '(kill-current-buffer :which-key "kill current buffer")
+    "Q" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
     ;; magit
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
@@ -1075,7 +1097,7 @@ folder, otherwise delete a character backward"
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
-    "C-s"   '(lambda () (interactive) (evil-force-normal-state) (save-buffer))
+    ;; "C-s"   '(lambda () (interactive) (evil-force-normal-state) (save-buffer))
     "C-/"   'consult-line
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
