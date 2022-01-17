@@ -248,6 +248,7 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   + =C-x C-q= to enter =wdired=
   + =C-c C-c= to confirm
   + =C-c C-k= to cancel
+
 #+begin_src emacs-lisp
 (use-package dired
   :ensure nil
@@ -255,7 +256,10 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   :hook (dired-mode . dired-hide-details-mode)
   :bind (:map dired-mode-map
        ("RET" . dired-find-alternate-file)
-       ("-" . (lambda () (interactive) (find-alternate-file ".."))))
+       ("-" . (lambda () (interactive) (find-alternate-file "..")))
+       ("\C-c\C-y" . dired-copy-paste-do-copy)
+       ("\C-c\C-p" . dired-copy-paste-do-paste)
+       ("\C-c\C-d" . dired-copy-paste-do-cut))
   :commands (dired dired-jump)
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
@@ -264,7 +268,10 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   (put 'dired-find-alternate-file 'disabled nil) ; disables warning
   ;; not use macos ls
   (when (equal system-type 'darwin)
-    (setq insert-directory-program "/usr/local/opt/coreutils/libexec/gnubin/ls")))
+    (setq insert-directory-program
+     "/opt/homebrew/opt/coreutils/libexec/gnubin/ls"
+     ; "/usr/local/opt/coreutils/libexec/gnubin/ls"
+)))
 
 (use-package all-the-icons-dired
   :hook (dired-mode . all-the-icons-dired-mode))
@@ -275,42 +282,80 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   (evil-collection-define-key 'normal 'dired-mode-map
     "gh" 'dired-hide-dotfiles-mode))
 #+end_src
+
+better copy paste, copied from:
+https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
+
+#+begin_src emacs-lisp
+(defvar dired-copy-paste-func nil)
+(defvar dired-copy-paste-stored-file-list nil)
+
+(defun dired-copy-paste-parse-files-for-directories (fns)
+    "Add slashes to the end of files that are directories."
+    (mapcar (lambda (fn)
+	      (if (file-directory-p fn)
+		  (concat fn "/")
+		fn))
+	    fns))
+
+
+(defun dired-copy-paste-do-cut ()
+  "In dired-mode, cut a file/dir on current line or all marked file/dir(s)."
+  (interactive)
+  (setq dired-copy-paste-stored-file-list (dired-copy-paste-parse-files-for-directories
+					   (dired-get-marked-files))
+        dired-copy-paste-func 'rename-file)
+  (message
+   (format "%S is/are cut."dired-copy-paste-stored-file-list)))
+
+
+(defun dired-copy-paste-do-copy ()
+  "In dired-mode, copy a file/dir on current line or all marked file/dir(s)."
+  (interactive)
+  (setq dired-copy-paste-stored-file-list (dired-get-marked-files)
+        dired-copy-paste-func 'dired-copy-file)
+  (message
+   (format "%S is/are copied."dired-copy-paste-stored-file-list)))
+
+
+(defun dired-copy-paste-do-paste ()
+  "In dired-mode, paste cut/copied file/dir(s) into current directory."
+  (interactive)
+  (let ((stored-file-list nil))
+    (dolist (stored-file dired-copy-paste-stored-file-list)
+      (condition-case nil
+          (progn
+            (funcall dired-copy-paste-func stored-file (dired-current-directory) 1)
+            (push stored-file stored-file-list))
+        ;; (error nil)
+	))
+    (if (eq dired-copy-paste-func 'rename-file)
+        (setq dired-copy-paste-stored-file-list nil
+              dired-copy-paste-func nil))
+    (revert-buffer)
+    (message
+     (format "%d file/dir(s) pasted into current directory." (length stored-file-list)))))
+#+end_src
 ** Orderless
 #+begin_src emacs-lisp
 (use-package orderless
   :demand t
   :custom (completion-styles '(orderless)))
 #+end_src
-** Selectrum
+** Vertico
 #+begin_src emacs-lisp
-(defun dot/minibuffer-backward-kill (arg)
-  "When minibuffer is completing a file name delete up to parent
-folder, otherwise delete a character backward"
-  (interactive "p")
-  (if minibuffer-completing-file-name
-      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
-      (if (string-match-p "/." (minibuffer-contents))
-          (zap-up-to-char (- arg) ?/)
-        (delete-minibuffer-contents))
-      (delete-backward-char arg)))
-
-(use-package selectrum
-:demand t
-:bind (:map minibuffer-local-map
-       ("M-<backspace>" . dot/minibuffer-backward-kill))
-:config (selectrum-mode +1))
-#+end_src
-** Prescient
-#+begin_src emacs-lisp
-(use-package prescient :config (prescient-persist-mode))
-(use-package selectrum-prescient :after selectrum :config (selectrum-prescient-mode))
-
-;; put it here so prescient doesn't overwrite selectrum highlight
-(setq selectrum-refine-candidates-function #'orderless-filter
-      selectrum-highlight-candidates-function #'orderless-highlight-matches)
-
-(use-package company-prescient :init (company-prescient-mode) :after company)
-
+(use-package vertico
+  :straight '(vertico :host github
+                      :repo "minad/vertico"
+                      :branch "main")
+  :bind (:map minibuffer-local-map
+         ("M-<backspace>" . dot/minibuffer-backward-kill))
+  :custom
+  (vertico-cycle t)
+  :custom-face
+  (vertico-current ((t (:background "#3a3f5a"))))
+  :init
+  (vertico-mode))
 #+end_src
 ** Consult
 - =consult-minor-mode-menu= use =i SPC= to narrow to active minor modes
@@ -360,7 +405,7 @@ Note: it crashes randomly with native comp as of 2021-05-18
 )
 
 (use-package embark
-  :after selectrum
+  :after vertico
   :bind
   (:map minibuffer-local-map
   (("C-e" . embark-act)
@@ -834,6 +879,7 @@ Useful functions:
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
+  :disabled
   :commands dap-debug
   :config
   (require 'dap-hydra)
@@ -915,6 +961,8 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 )
 #+end_src
 ** Vterm
+to compile vterm in arm, run emacs from Terminal app
+maybe -brew install libvterm-
 #+begin_src emacs-lisp
 (use-package vterm
 :commands vterm
@@ -1174,8 +1222,8 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 #+end_src
 ** Java
 #+begin_src emacs-lisp
-(use-package lsp-java)
-(add-hook 'java-mode-hook #'lsp)
+;; (use-package lsp-java)
+;; (add-hook 'java-mode-hook #'lsp)
 #+end_src
 * Chill
 ** Elfeed
@@ -1344,6 +1392,7 @@ useful default keybindings:
     "C-j" 'evil-window-down
     "C-h" 'evil-window-left
     "C-l" 'evil-window-right
+    "M-s" 'query-replace
     "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
   )
   ;; non-override global mapping for normal + insert state
