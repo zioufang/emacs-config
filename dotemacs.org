@@ -359,6 +359,9 @@ https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
 #+end_src
 ** Consult
 - =consult-minor-mode-menu= use =i SPC= to narrow to active minor modes
+- =consult-ripgrep= tricks
+  1. pass ripgrep flag with --: searching only c file =#searchterm -- -g *.c=
+  2. sequence search pipe with #: search searchterm then search for .c in the search buffer =#searchterm#\.c=
 #+begin_src emacs-lisp
 (use-package consult
   :demand t
@@ -381,6 +384,9 @@ https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
 
 (use-package consult-lsp)
 
+#+end_src
+** Affe
+#+begin_src emacs-lisp
 (use-package affe
   :straight (affe :type git :host github :repo "minad/affe")
   :after orderless
@@ -482,6 +488,15 @@ Note: it crashes randomly with native comp as of 2021-05-18
   :config
   (setq which-key-idle-delay 0.2))
 #+end_src
+** Good Scroll
+#+begin_src emacs-lisp
+(use-package good-scroll
+:init (good-scroll-mode 1)
+:disabled
+:config
+  (define-key evil-normal-state-map "\C-u" '(lambda () (interactive) (good-scroll-move (- 1000))))
+)
+#+end_src
 * Org Mode
 =Shift-Tab= to toggle headings for the whole doc
 ** Basic Setup
@@ -537,9 +552,7 @@ list emacs colour name with =list-colors-display=
   (setq org-startup-folded t)
   (setq org-ellipsis " ▾")
   (dot/org-font-setup)
-  (setq org-agenda-files
-    '("~/projects/org/personal.org"
-      "~/projects/org/tasks.org"))
+  (setq org-agenda-files (quote ("~/Dropbox/org")))
   (setq org-todo-keywords
     '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
   ;; tags
@@ -818,6 +831,7 @@ prefix key: =C-c l=
       lsp-ui-sideline-show-code-actions nil
       lsp-ui-doc-enable nil
       lsp-ui-doc-max-height 50
+      eldoc-idle-delay 0 ;; bottom left defintion
 ))
 #+end_src
 *** lsp-tree
@@ -996,7 +1010,10 @@ maybe -brew install libvterm-
 #+end_src
 ** Avy
 #+begin_src emacs-lisp
-(use-package avy)
+(use-package avy
+:config
+(setq avy-all-windows nil)
+)
 #+end_src
 ** Apheleia
 formatting codes, dependencies:
@@ -1140,6 +1157,8 @@ https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-lsp-m
 )
 #+end_src
 ** Rust
+for std lib to work in lsp, do:
+=rustup component add rust-src=
 build rust-analyzer from source
 https://rust-analyzer.github.io/manual.html#building-from-source
 =git clone https://github.com/rust-analyzer/rust-analyzer.git=
@@ -1368,7 +1387,7 @@ useful default keybindings:
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(affe-find :which-key "find project files")
-    "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
+    "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
@@ -1447,4 +1466,3 @@ useful default keybindings:
 ** gcmh: garbage collector hack
 ** origami for folding
 ** shell unicode
-** apheleia

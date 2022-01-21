@@ -386,6 +386,13 @@
   :config
   (setq which-key-idle-delay 0.2))
 
+(use-package good-scroll
+:init (good-scroll-mode 1)
+:disabled
+:config
+  (define-key evil-normal-state-map "\C-u" '(lambda () (interactive) (good-scroll-move (- 1000))))
+)
+
 (defun dot/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 1)
@@ -436,9 +443,7 @@
   (setq org-startup-folded t)
   (setq org-ellipsis " ▾")
   (dot/org-font-setup)
-  (setq org-agenda-files
-    '("~/projects/org/personal.org"
-      "~/projects/org/tasks.org"))
+  (setq org-agenda-files (quote ("~/Dropbox/org")))
   (setq org-todo-keywords
     '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")))
   ;; tags
@@ -660,6 +665,7 @@
       lsp-ui-sideline-show-code-actions nil
       lsp-ui-doc-enable nil
       lsp-ui-doc-max-height 50
+      eldoc-idle-delay 0 ;; bottom left defintion
 ))
 
 (use-package lsp-treemacs
@@ -797,7 +803,10 @@
 (add-hook 'prog-mode-hook #'yas-minor-mode)
 )
 
-(use-package avy)
+(use-package avy
+:config
+(setq avy-all-windows nil)
+)
 
 (use-package apheleia
   :config
@@ -1110,7 +1119,7 @@
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(affe-find :which-key "find project files")
-    "fo" '((lambda () (interactive) (consult-find "~/projects/org")) :which-key "find org file")
+    "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
