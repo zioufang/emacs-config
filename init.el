@@ -284,7 +284,7 @@
           (when-let (project (project-current))
             (car (project-roots project)))))
   (setq consult-preview-key (kbd "M-p"))
-  (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
+  ;; (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
@@ -629,6 +629,12 @@
 (evil-open-above 1)
 )
 
+(defun dot/insert-quote()
+(interactive)
+(insert "\"\"")
+(left-char)
+)
+
 (use-package key-chord
 ;; :hook
 ;; (go-mode . (lambda () (key-chord-define go-mode-map "{{" 'dot/insert-curly)))
@@ -638,6 +644,7 @@
 ;; (js-mode . (lambda () (key-chord-define rust-mode-map "{{" 'dot/insert-curly)))
 :config
 (key-chord-define-global "{{" 'dot/insert-curly)
+(key-chord-define-global "\"\"" 'dot/insert-quote)
 (key-chord-mode 1))
 
 (setq tramp-default-method "ssh")
@@ -810,12 +817,13 @@
 
 (use-package apheleia
   :config
+  (add-to-list 'apheleia-mode-alist '(solidity-mode . prettier))
   (setf (alist-get 'gofmt apheleia-formatters)
         '("goimports"))
   (setf (alist-get 'black apheleia-formatters)
         '("black" "-l" "119" "-"))
   (setf (alist-get 'prettier apheleia-formatters)
-        '("npx" "prettier" "--stdin-filepath" filepath))
+        '("prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
 
 ;; Make sure emacs use the proper ENV VAR
@@ -987,8 +995,27 @@
 (use-package yaml-mode
   :mode "\\.ya?ml\\'")
 
-;; (use-package lsp-java)
-;; (add-hook 'java-mode-hook #'lsp)
+(use-package solidity-mode
+:config
+(setq solidity-comment-style 'slash)
+)
+
+;;; require cl otherwise got remove-if-not void function
+;;; then it thinks it is a clang, which doesn't really work with forge
+
+;; (require 'cl)
+;; (use-package solidity-flycheck
+;; :init
+;; (setq solidity-solc-path "/opt/homebrew/bin/solc")
+;; (setq solidity-flycheck-solc-checker-active t)
+;; )
+
+(use-package company-solidity
+:hook (solidity-mode . (lambda ()
+	(set (make-local-variable 'company-backends)
+		(append '((company-solidity company-capf company-dabbrev-code))
+			company-backends)))
+))
 
 ;; (use-package elfeed
 ;; :config
@@ -1125,7 +1152,7 @@
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
     "ld" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     "lf" '(lsp-ui-doc-focus-frame :which-key "lsp ui focus frame")
-    "ll" '(consult-lsp-diagnostics :which-key "list errors")
+    "ll" '(flycheck-next-error :which-key "list errors")
     ;; "le" '(flycheck-list-errors :which-key "list errors")
     ;; org
     "o" '(:ignore o :which-key "org commands")
