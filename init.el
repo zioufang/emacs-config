@@ -75,13 +75,15 @@
 (set-face-attribute 'variable-pitch nil :font dot-variable-font :height (+ dot-font-size 30) :weight 'regular)
 
 (setq inhibit-startup-message t)
+(setq use-dialog-box nil)
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
 (tooltip-mode -1)           ; Disable tooltips
 (menu-bar-mode -1)            ; Disable the menu bar
 (set-fringe-mode 5)        ; Give some breathing room
 
-(auto-revert-mode t)    ;; auto load file when changed
+(global-auto-revert-mode t)    ;; auto load file when changed
+(setq global-auto-revert-non-file-buffers t) ;; great for direc
 (setq auto-revert-avoid-polling t)
 
 (global-set-key (kbd "<escape>") 'keyboard-scape-quit)   ;; Make ESC quit prompts
@@ -289,7 +291,7 @@
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
   (consult-buffer-filter '("^\*" "\\` " "magit*"))
-  (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
+  ;; (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
 
 (use-package consult-lsp)
@@ -611,7 +613,7 @@
 
 (use-package evil-surround
   :config
-  (global-evil-surround-mode))
+  (global-evil-surround-mode 1))
 
 (use-package undo-fu
   :after evil
@@ -782,6 +784,9 @@
     ("C-c C-w" . wgrep-change-to-wgrep-mode))
 )
 
+;; disable evil in vterm, relies on zsh vi mode
+(evil-set-initial-state 'vterm-mode 'emacs)
+
 (use-package vterm
 :commands vterm
 :config (setq vterm-max-scrollback 10000))
@@ -791,16 +796,19 @@
 :custom (vterm-toggle-scope 'project)
 :config
 (setq vterm-toggle-fullscreen-p nil)
-;; open vterm in dedicated bottom window
 (add-to-list 'display-buffer-alist
-             '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+             '((lambda (buffer-or-name _)
+                   (let ((buffer (get-buffer buffer-or-name)))
+                     (with-current-buffer buffer
+                       (or (equal major-mode 'vterm-mode)
+                           (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
                 ;; (display-buffer-reuse-window display-buffer-at-bottom)
                 (display-buffer-reuse-window display-buffer-in-direction)
                 ;;display-buffer-in-direction/direction/dedicated is added in emacs27
                 (direction . bottom)
                 (dedicated . t) ;dedicated is supported in emacs27
                 (reusable-frames . visible)
-                (window-height . 0.3)))
+                (window-height . 0.35)))
 )
 
 (use-package yasnippet
@@ -920,7 +928,7 @@
   ;; or use (when (eq major-mode 'python-mode) 'blacken-buffer)
   ;; (add-hook 'python-mode-hook (lambda () (add-hook 'before-save-hook 'blacken-buffer)))
 
-(use-package ein :commands ein:run)
+(use-package ein :disabled :commands ein:run)
 
 ;; (defun dot/lsp-go-before-save-hooks ()
 ;;   ;; (add-hook 'before-save-hook #'lsp-format-buffer t t)
@@ -945,6 +953,7 @@
 (setq rust-format-on-save t)
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
+  (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
 )
 
 (use-package terraform-mode :mode "\\.tf\\'")
@@ -1025,6 +1034,25 @@
 ;;   "https://hnrss.org/frontpage"
 ;;   )
 ;; ))
+
+;; toggle evil
+(defun toggle-evilmode ()
+  (interactive)
+  (if (eq evil-state 'normal)
+    (progn
+      ; go emacs
+      (message "Emacs Mode")
+      (evil-emacs-state)
+      (set-variable 'cursor-type 'bar)
+    )
+    (progn
+      ; go evil
+      (message "Normal Mode")
+      (evil-normal-state)
+      (set-variable 'cursor-type 'box)
+    )
+  )
+)
 
 (defun dot/go-to-dotemacs ()
     "Go To Emacs Config File"
@@ -1125,7 +1153,7 @@
     :states '(normal emacs)
     :keymaps 'override
     :prefix "SPC"
-    :non-normal-prefix "M-SPC"
+    :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
@@ -1145,7 +1173,8 @@
     "fd" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
-    "ff" '(affe-find :which-key "find project files")
+    "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
+    "fp" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
@@ -1177,7 +1206,7 @@
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
-    ;; "C-s"   '(lambda () (interactive) (evil-force-normal-state) (save-buffer))
+    "M-z" 'toggle-evilmode
     "C-/"   'consult-line
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
