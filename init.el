@@ -65,9 +65,9 @@
 ;; Use straight.el for use-package expressions
 (straight-use-package 'use-package)
 
-(defvar dot-font-size 150)
-(defvar dot-mono-font"JetBrains Mono")
-(defvar dot-variable-font "Cantarell")
+(defvar dot-font-size 140)
+(defvar dot-mono-font"JetBrainsMono Nerd Font")
+(defvar dot-variable-font "Avenir Next")
 (set-face-attribute 'default nil :font dot-mono-font :height dot-font-size)
 ;; Set the fixed pitch face
 (set-face-attribute 'fixed-pitch nil :font dot-mono-font :height dot-font-size)
@@ -1059,6 +1059,17 @@
     (interactive)
     (find-file'dot/go-to-dotemacs "~/projects/emacs-config/dotemacs.org"))
 
+(defun dot/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent
+folder, otherwise delete a character backward"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+      (if (string-match-p "/." (minibuffer-contents))
+          (zap-up-to-char (- arg) ?/)
+        (delete-minibuffer-contents))
+      (delete-backward-char arg)))
+
 (defun dot/toggle-frame ()
     "
     Toggle between make-frame (if visible frame == 1) and delete-frame (else).
@@ -1155,6 +1166,7 @@
     :prefix "SPC"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
+    "r" '(consult-ripgrep :which-key "ripgrep")
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
     "j" '(next-buffer :which-key "next buffer")
@@ -1176,6 +1188,11 @@
     "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
     "fp" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
+    ;; bookmarks
+    "m" '(:ignore m :which-key "bookmark commands")
+    "mm" '(consult-bookmark :which-key "bookmark consult")
+    "ms" '(bookmark-set :which-key "bookmark set")
+    "md" '(bookmark-delete :which-key "bookmark delete")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
@@ -1211,7 +1228,7 @@
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
     "C-M-r" '(consult-ripgrep :which-key "ripgrep")
-    "M-7"   'dot/shell-project-root
+    "C-M-s"   'dot/shell-project-root
     ;; TODO consult-register
   )
   ;; evil normal/visual mapping
