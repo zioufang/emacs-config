@@ -351,7 +351,7 @@ https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
                       :repo "minad/vertico"
                       :branch "main")
   :bind (:map minibuffer-local-map
-         ("M-<backspace>" . dot/minibuffer-backward-kill))
+         ("C-<return>" . vertico-exit-input))
   :custom
   (vertico-cycle t)
   :custom-face
@@ -821,7 +821,10 @@ prefix key: =C-c l=
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
   (lsp-enable-which-key-integration t)
+  (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
+  ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
@@ -985,7 +988,7 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 #+end_src
 ** Vterm
 to compile vterm in arm, run emacs from Terminal app
-maybe -brew install libvterm-
+maybe =brew install libvterm=
 #+begin_src emacs-lisp
 ;; disable evil in vterm, relies on zsh vi mode
 (evil-set-initial-state 'vterm-mode 'emacs)
@@ -1047,6 +1050,53 @@ formatting codes, dependencies:
   (setf (alist-get 'prettier apheleia-formatters)
         '("prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
+#+end_src
+** Hideshow
+From https://karthinks.com/software/simple-folding-with-hideshow/
+#+begin_src emacs-lisp
+(use-package hideshow
+  :hook ((prog-mode . hs-minor-mode)))
+
+;; (defun dot/hs-toggle-fold ()
+;;   (interactive)
+;;   (save-excursion
+;;     (end-of-line)
+;;     (hs-toggle-hiding)))
+
+(defun dot/hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('dot/hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; TODO: Fix this case. `hs-show-block' needs to be
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+           (if (not (hs-already-hidden-p))
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children))))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun dot/hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('dot/hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'dot/hs-global-show))
+      (_ (hs-hide-all))))
+
 #+end_src
 ** Misc
 #+begin_src emacs-lisp
@@ -1441,6 +1491,7 @@ folder, otherwise delete a character backward"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
     "r" '(consult-ripgrep :which-key "ripgrep")
+    "s" 'query-replace
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
     "j" '(next-buffer :which-key "next buffer")
@@ -1490,8 +1541,11 @@ folder, otherwise delete a character backward"
     "C-j" 'evil-window-down
     "C-h" 'evil-window-left
     "C-l" 'evil-window-right
-    "M-s" 'query-replace
+    "C-<tab>" 'dot/hs-cycle
+    "C-S-<tab>" 'dot/hs-global-cycle
     "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
+    "8" 'back-to-indentation
+    "9" 'end-of-line
   )
   ;; non-override global mapping for normal + insert state
   (general-define-key
@@ -1501,7 +1555,6 @@ folder, otherwise delete a character backward"
     "C-/"   'consult-line
     "C-M-/" 'consult-outline
     "C-M-p" 'consult-yank-replace
-    "C-M-r" '(consult-ripgrep :which-key "ripgrep")
     "C-M-s"   'dot/shell-project-root
     ;; TODO consult-register
   )
@@ -1543,6 +1596,9 @@ folder, otherwise delete a character backward"
     "SPC" yas-maybe-expand
   )
 #+end_src
+
+#+RESULTS:
+
 * Todos
 ** gcmh: garbage collector hack
 ** origami for folding
