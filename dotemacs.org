@@ -104,7 +104,7 @@ debug errored out config:
 ** Fonts
 install font =Cantarell=
 #+begin_src emacs-lisp
-(defvar dot-font-size 140)
+(defvar dot-font-size 135)
 (defvar dot-mono-font"JetBrainsMono Nerd Font")
 (defvar dot-variable-font "Avenir Next")
 (set-face-attribute 'default nil :font dot-mono-font :height dot-font-size)
@@ -271,8 +271,8 @@ on Mac, install gnu =ls= first e.g. =brew install coreutils=
   ;; not use macos ls
   (when (equal system-type 'darwin)
     (setq insert-directory-program
-     "/opt/homebrew/opt/coreutils/libexec/gnubin/ls"
-     ; "/usr/local/opt/coreutils/libexec/gnubin/ls"
+     ;; "/opt/homebrew/opt/coreutils/libexec/gnubin/ls"
+     "/usr/local/opt/coreutils/libexec/gnubin/ls"
 )))
 
 (use-package all-the-icons-dired
@@ -345,13 +345,16 @@ https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
   :custom (completion-styles '(orderless)))
 #+end_src
 ** Vertico
+=C-<backspace>= for backward kill
 #+begin_src emacs-lisp
 (use-package vertico
   :straight '(vertico :host github
                       :repo "minad/vertico"
                       :branch "main")
   :bind (:map minibuffer-local-map
-         ("C-<return>" . vertico-exit-input))
+         ;; ("M-<backspace>" . dot/minibuffer-backward-kill)
+         ("C-<return>" . vertico-exit-input)
+)
   :custom
   (vertico-cycle t)
   :custom-face
@@ -788,7 +791,7 @@ func = <<the-func()>>
 (evil-open-above 1)
 )
 
-(defun dot/insert-quote()
+(defun dot/insert-quote ()
 (interactive)
 (insert "\"\"")
 (left-char)
@@ -902,6 +905,7 @@ Useful functions:
 ** Dap
 #+begin_src emacs-lisp
 (use-package dap-mode
+  :disabled
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
@@ -961,6 +965,8 @@ https://github.com/emacs-evil/evil-collection/tree/master/modes/magit
 (use-package git-link
   :commands git-link
   :config
+  (add-to-list 'git-link-remote-alist '("git\\.realestate\\.com\\.au" git-link-github))
+  (add-to-list 'git-link-commit-remote-alist '("git\\.realestate\\.com\\.au" git-link-commit-github))
   (setq git-link-open-in-browser t))
 
 (use-package git-gutter
@@ -1045,8 +1051,8 @@ formatting codes, dependencies:
   (add-to-list 'apheleia-mode-alist '(solidity-mode . prettier))
   (setf (alist-get 'gofmt apheleia-formatters)
         '("goimports"))
-  (setf (alist-get 'black apheleia-formatters)
-        '("black" "-l" "119" "-"))
+  ;; (setf (alist-get 'black apheleia-formatters)
+  ;;       '("black" "-l" "119" "-"))
   (setf (alist-get 'prettier apheleia-formatters)
         '("prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
@@ -1242,6 +1248,7 @@ install =cargo-edit= for =cargo add/rm=
 :hook (rust-mode . lsp-deferred)
 :config
 (setq rust-format-on-save t)
+(setq lsp-rust-server 'rust-analyzer)
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
@@ -1336,6 +1343,14 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 			company-backends)))
 ))
 #+end_src
+** Ruby
+#+begin_src emacs-lisp
+(use-package ruby-mode
+:hook (ruby-mode . lsp-deferred)
+)
+
+(use-package inf-ruby)
+#+end_src
 * Chill
 ** Elfeed
 #+begin_src emacs-lisp
@@ -1398,6 +1413,17 @@ folder, otherwise delete a character backward"
     (if (eq (length (visible-frame-list)) 1)
         (make-frame)
         (delete-frame)))
+
+(defun dot/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent
+folder, otherwise delete a character backward"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+      (if (string-match-p "/." (minibuffer-contents))
+          (zap-up-to-char (- arg) ?/)
+        (delete-minibuffer-contents))
+      (delete-backward-char arg)))
 
 (defun dot/toggle-maximize-buffer () "Maximize buffer"
   (interactive)
