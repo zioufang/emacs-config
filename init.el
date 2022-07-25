@@ -65,7 +65,7 @@
 ;; Use straight.el for use-package expressions
 (straight-use-package 'use-package)
 
-(defvar dot-font-size 140)
+(defvar dot-font-size 135)
 (defvar dot-mono-font"JetBrainsMono Nerd Font")
 (defvar dot-variable-font "Avenir Next")
 (set-face-attribute 'default nil :font dot-mono-font :height dot-font-size)
@@ -196,8 +196,8 @@
   ;; not use macos ls
   (when (equal system-type 'darwin)
     (setq insert-directory-program
-     "/opt/homebrew/opt/coreutils/libexec/gnubin/ls"
-     ; "/usr/local/opt/coreutils/libexec/gnubin/ls"
+     ;; "/opt/homebrew/opt/coreutils/libexec/gnubin/ls"
+     "/usr/local/opt/coreutils/libexec/gnubin/ls"
 )))
 
 (use-package all-the-icons-dired
@@ -267,7 +267,9 @@
                       :repo "minad/vertico"
                       :branch "main")
   :bind (:map minibuffer-local-map
-         ("C-<return>" . vertico-exit-input))
+         ;; ("M-<backspace>" . dot/minibuffer-backward-kill)
+         ("C-<return>" . vertico-exit-input)
+)
   :custom
   (vertico-cycle t)
   :custom-face
@@ -631,7 +633,7 @@
 (evil-open-above 1)
 )
 
-(defun dot/insert-quote()
+(defun dot/insert-quote ()
 (interactive)
 (insert "\"\"")
 (left-char)
@@ -717,6 +719,7 @@
   (company-prescient-mode 1))
 
 (use-package dap-mode
+  :disabled
   ;; Uncomment the config below if you want all UI panes to be hidden by default!
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
@@ -764,6 +767,8 @@
 (use-package git-link
   :commands git-link
   :config
+  (add-to-list 'git-link-remote-alist '("git\\.realestate\\.com\\.au" git-link-github))
+  (add-to-list 'git-link-commit-remote-alist '("git\\.realestate\\.com\\.au" git-link-commit-github))
   (setq git-link-open-in-browser t))
 
 (use-package git-gutter
@@ -831,8 +836,8 @@
   (add-to-list 'apheleia-mode-alist '(solidity-mode . prettier))
   (setf (alist-get 'gofmt apheleia-formatters)
         '("goimports"))
-  (setf (alist-get 'black apheleia-formatters)
-        '("black" "-l" "119" "-"))
+  ;; (setf (alist-get 'black apheleia-formatters)
+  ;;       '("black" "-l" "119" "-"))
   (setf (alist-get 'prettier apheleia-formatters)
         '("prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
@@ -997,6 +1002,7 @@
 :hook (rust-mode . lsp-deferred)
 :config
 (setq rust-format-on-save t)
+(setq lsp-rust-server 'rust-analyzer)
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
@@ -1072,6 +1078,12 @@
 			company-backends)))
 ))
 
+(use-package ruby-mode
+:hook (ruby-mode . lsp-deferred)
+)
+
+(use-package inf-ruby)
+
 ;; (use-package elfeed
 ;; :config
 ;; (setf url-queue-timeout 15)
@@ -1125,6 +1137,17 @@ folder, otherwise delete a character backward"
     (if (eq (length (visible-frame-list)) 1)
         (make-frame)
         (delete-frame)))
+
+(defun dot/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent
+folder, otherwise delete a character backward"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+      ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+      (if (string-match-p "/." (minibuffer-contents))
+          (zap-up-to-char (- arg) ?/)
+        (delete-minibuffer-contents))
+      (delete-backward-char arg)))
 
 (defun dot/toggle-maximize-buffer () "Maximize buffer"
   (interactive)
@@ -1232,8 +1255,8 @@ folder, otherwise delete a character backward"
     "fp" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
-    "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
-    "fd" '(affe-find :which-key "find project files")
+    "ff" '(consult-project-buffer :which-key "switch project buffer")
+    "fd" '(affe-find :which-key "find currect project directory files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; bookmarks
     "m" '(:ignore m :which-key "bookmark commands")
