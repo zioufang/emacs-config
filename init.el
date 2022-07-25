@@ -1229,11 +1229,11 @@ folder, otherwise delete a character backward"
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
     "f" '(:ignore f :which-key "file commands")
-    "fd" '(dot/find-in-projects :which-key "fd files ~/projects")
+    "fp" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
-    "fp" '(affe-find :which-key "find project files")
+    "fd" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; bookmarks
     "m" '(:ignore m :which-key "bookmark commands")
