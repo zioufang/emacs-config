@@ -275,6 +275,38 @@
   :init
   (vertico-mode))
 
+;; orignal project-recent-file excludes one exists in buffer list
+(defvar consult-source-project-recent-file-incl-buffer
+  `(:name     "Project File"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :state    ,#'consult--file-state
+    :new
+    ,(lambda (file)
+       (consult--file-action
+        (expand-file-name file (consult--project-root))))
+    :enabled
+    ,(lambda ()
+       (and consult-project-function
+            recentf-mode))
+    :items
+    ,(lambda ()
+      (when-let (root (consult--project-root))
+        (let ((len (length root))
+              (ht (consult--buffer-file-hash)))
+          (mapcar (lambda (file)
+                    (let ((part (substring file len)))
+                      (when (equal part "") (setq part "./"))
+                      (put-text-property 0 (length part)
+                                         'multi-category `(file . ,file) part)
+                      part))
+                  (seq-filter (lambda (x) (string-prefix-p root x))
+                              recentf-list))))))
+  "Project file candidate source for `consult-buffer'.")
+
 (use-package consult
   :demand t
   :bind
@@ -286,7 +318,9 @@
           (when-let (project (project-current))
             (car (project-roots project)))))
   (setq consult-preview-key (kbd "M-p"))
-  ;; (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
+  (setq consult-project-buffer-sources
+      (list
+       `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
@@ -838,13 +872,21 @@
   (apheleia-global-mode +1))
 
 (use-package hideshow
-  :hook ((prog-mode . hs-minor-mode)))
+  :hook ((prog-mode . hs-minor-mode))
+  :config
+  ;; https://github.com/emacs-mirror/emacs/blob/2181495af8f47057a7a61e01c192416b9ca70988/lisp/progmodes/hideshow.el#L258
+  (add-to-list 'hs-special-modes-alist '(typescript-mode "{" "}" "/[*/]" nil))
+  (add-to-list 'hs-special-modes-alist '(rust-mode "{" "}" "/[*/]" nil))
+)
 
 ;; (defun dot/hs-toggle-fold ()
 ;;   (interactive)
-;;   (save-excursion
-;;     (end-of-line)
-;;     (hs-toggle-hiding)))
+;;   (if (hs-already-hidden-p)
+;;     (save-excursion
+;;       (end-of-line)
+;;       (hs-show-block))
+;;     (hs-hide-block)
+;;   ))
 
 (defun dot/hs-cycle (&optional level)
   (interactive "p")
