@@ -277,6 +277,38 @@
   :init
   (vertico-mode))
 
+;; orignal project-recent-file excludes one exists in buffer list
+(defvar consult-source-project-recent-file-incl-buffer
+  `(:name     "Project File"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :state    ,#'consult--file-state
+    :new
+    ,(lambda (file)
+       (consult--file-action
+        (expand-file-name file (consult--project-root))))
+    :enabled
+    ,(lambda ()
+       (and consult-project-function
+            recentf-mode))
+    :items
+    ,(lambda ()
+      (when-let (root (consult--project-root))
+        (let ((len (length root))
+              (ht (consult--buffer-file-hash)))
+          (mapcar (lambda (file)
+                    (let ((part (substring file len)))
+                      (when (equal part "") (setq part "./"))
+                      (put-text-property 0 (length part)
+                                         'multi-category `(file . ,file) part)
+                      part))
+                  (seq-filter (lambda (x) (string-prefix-p root x))
+                              recentf-list))))))
+  "Project file candidate source for `consult-buffer'.")
+
 (use-package consult
   :demand t
   :bind
@@ -289,11 +321,14 @@
             (car (project-roots project)))))
   (setq consult-preview-key (kbd "M-p"))
   ;; (setq consult--source-project-file (plist-put consult--source-project-file :hidden nil))
+  (setq consult-project-buffer-sources
+      (list
+       `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
+
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
   (consult-buffer-filter '("^\*" "\\` " "magit*"))
-  ;; (consult-buffer-sources '(consult--source-buffer consult--source-project-buffer  consult--source-project-file))
 )
 
 (use-package consult-lsp)
@@ -871,7 +906,7 @@
            (hs-hide-block))
           (_
            (if (not (hs-already-hidden-p))
-               (hs-hide-block)
+               (end-of-line) (hs-hide-block)
              (hs-hide-level 1)
              (setq this-command 'hs-cycle-children))))
       (hs-hide-level level)
@@ -1255,8 +1290,8 @@ folder, otherwise delete a character backward"
     "fp" '(dot/find-in-projects :which-key "fd files ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     "fr" '(consult-recent-file :which-key "find recent files")
-    "ff" '(consult-project-buffer :which-key "switch project buffer")
-    "fd" '(affe-find :which-key "find currect project directory files")
+    "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
+    "fd" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; bookmarks
     "m" '(:ignore m :which-key "bookmark commands")
