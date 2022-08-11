@@ -177,6 +177,15 @@
 (setq split-height-threshold nil
       split-width-threshold 80)
 
+(defun dot/dired-open-file ()
+  "In dired, open the file named on this line."
+  (interactive)
+  (let* ((file (dired-get-filename nil t)))
+    (message "Opening %s..." file)
+    ;; replace this with xdg-open for linux
+    (call-process "open" nil 0 nil file)
+    (message "Opening %s done" file)))
+
 (use-package dired
   :ensure nil
   :straight nil
@@ -186,7 +195,9 @@
        ("-" . (lambda () (interactive) (find-alternate-file "..")))
        ("\C-c\C-y" . dired-copy-paste-do-copy)
        ("\C-c\C-p" . dired-copy-paste-do-paste)
-       ("\C-c\C-d" . dired-copy-paste-do-cut))
+       ("\C-c\C-d" . dired-copy-paste-do-cut)
+       ("\C-c\C-o" . dot/dired-open-file)
+       )
   :commands (dired dired-jump)
   :custom
   (dired-listing-switches "-Agho --group-directories-first")
@@ -516,7 +527,7 @@
   :hook (org-mode . org-appear-mode))
 
 (defun dot/org-mode-visual-fill ()
-  (setq visual-fill-column-width 100
+  (setq visual-fill-column-width 140
         visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
