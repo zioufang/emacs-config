@@ -876,8 +876,14 @@
   (add-to-list 'apheleia-mode-alist '(solidity-mode . prettier))
   (setf (alist-get 'gofmt apheleia-formatters)
         '("goimports"))
+  ;; python
   (setf (alist-get 'black apheleia-formatters)
         '("black" "-l" "119" "-"))
+  (setf (alist-get 'isort apheleia-formatters)
+        '("isort" "--stdout" "-"))
+  (setf (alist-get 'python-mode apheleia-mode-alist)
+        '(isort black))
+  ;; prettier
   (setf (alist-get 'prettier apheleia-formatters)
         '("prettier" "--stdin-filepath" filepath))
   (apheleia-global-mode +1))
@@ -1319,8 +1325,8 @@ folder, otherwise delete a character backward"
     "C-<tab>" 'dot/hs-cycle
     "C-S-<tab>" 'dot/hs-global-cycle
     "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
-    "8" 'back-to-indentation
-    "9" 'end-of-line
+    "C-8" 'back-to-indentation
+    "C-9" 'end-of-line
   )
   ;; non-override global mapping for normal + insert state
   (general-define-key
