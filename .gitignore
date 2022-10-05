@@ -1,3 +1,6 @@
 *.el~
 *.org~
 *.bk
+/eln-cache/
+/elpa/
+/straight/
