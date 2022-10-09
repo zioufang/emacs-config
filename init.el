@@ -712,7 +712,7 @@
 )
 
 (use-package flycheck
-  :hook (lsp-mode . global-flycheck-mode))
+  :hook ((lsp-mode yaml-mode) . global-flycheck-mode))
 
 (use-package lsp-ui
 :after lsp-mode
@@ -1025,6 +1025,8 @@
   ;; :custom
   ;; (lsp-pyright-typechecking-mode "off")
 )
+
+(use-package poetry)
 
   ;; (use-package blacken
   ;;   :after python

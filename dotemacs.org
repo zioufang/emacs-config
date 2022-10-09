@@ -876,7 +876,7 @@ prefix key: =C-c l=
 )
 
 (use-package flycheck
-  :hook (lsp-mode . global-flycheck-mode))
+  :hook ((lsp-mode yaml-mode) . global-flycheck-mode))
 #+end_src
 *** lsp-ui
 #+begin_src emacs-lisp
@@ -1250,6 +1250,8 @@ From https://karthinks.com/software/simple-folding-with-hideshow/
   ;; :custom
   ;; (lsp-pyright-typechecking-mode "off")
 )
+
+(use-package poetry)
 
   ;; (use-package blacken
   ;;   :after python
