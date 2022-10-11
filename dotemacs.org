@@ -1415,6 +1415,21 @@ useful default keybindings:
 - =C-x k= kill buffer
 ** Helper Functions
 #+begin_src emacs-lisp
+;; mac only
+;; open -n -a 'Alacritty.app' --args --working-directory
+(defun dot/term-here ()
+    "Go To Emacs Config File"
+    (interactive)
+    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" default-directory)
+)
+
+(defun dot/term-proj-root ()
+    "Go To Emacs Config File"
+    (interactive)
+    (let ((root-dir (expand-file-name (locate-dominating-file default-directory ".git") nil)))
+    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" root-dir))
+)
+
 ;; toggle evil
 (defun toggle-evilmode ()
   (interactive)
