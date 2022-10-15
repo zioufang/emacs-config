@@ -609,6 +609,8 @@
   (evil-mode 1)
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+  (evil-global-set-key 'motion "gj" 'evil-next-line)
+  (evil-global-set-key 'motion "gk" 'evil-previous-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
   ;; to black hole
@@ -701,18 +703,14 @@
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
-  (setq lsp-enable-which-key-integration t)
+  (lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-eldoc-render-all t)
-  (setq lsp-eldoc-enable-hover nil)
   ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
   ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
-  ;; :custom
-  ;; (lsp-eldoc-render-all t)
 )
 
 (use-package flycheck
