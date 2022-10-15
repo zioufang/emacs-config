@@ -939,6 +939,8 @@
        (setq this-command 'dot/hs-global-show))
       (_ (hs-hide-all))))
 
+(use-package rg)
+
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell
 ;; :after vterm
@@ -1289,6 +1291,7 @@ folder, otherwise delete a character backward"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
     "r" '(consult-ripgrep :which-key "ripgrep")
+    "R" '(rg :which-key "rg")
     "s" 'query-replace
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
