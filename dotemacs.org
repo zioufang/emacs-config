@@ -419,9 +419,9 @@ https://github.com/jsilve24/dired-copy-paste/blob/master/dired-copy-paste.el
           (when-let (project (project-current))
             (car (project-roots project)))))
   (setq consult-preview-key (kbd "M-p"))
-  (setq consult-project-buffer-sources
-      (list
-       `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
+  ;; (setq consult-project-buffer-sources
+  ;;     (list
+  ;;      `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
@@ -764,6 +764,8 @@ func = <<the-func()>>
   (evil-mode 1)
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+  (evil-global-set-key 'motion "gj" 'evil-next-line)
+  (evil-global-set-key 'motion "gk" 'evil-previous-line)
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal)
   ;; to black hole
@@ -865,14 +867,18 @@ prefix key: =C-c l=
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
-  (lsp-enable-which-key-integration t)
+  (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-eldoc-render-all t)
+  (setq lsp-eldoc-enable-hover nil)
   ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
   ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
+  ;; :custom
+  ;; (lsp-eldoc-render-all t)
 )
 
 (use-package flycheck
@@ -1157,6 +1163,10 @@ From https://karthinks.com/software/simple-folding-with-hideshow/
       (_ (hs-hide-all))))
 
 #+end_src
+** rg
+#+begin_src emacs-lisp
+(use-package rg)
+#+end_src
 ** Misc
 #+begin_src emacs-lisp
 ;; Make sure emacs use the proper ENV VAR
@@ -1303,9 +1313,19 @@ install =cargo-edit= for =cargo add/rm=
 :hook (rust-mode . lsp-deferred)
 :config
 (setq rust-format-on-save t)
+(setq lsp-lens-enable nil)
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
+  ;; inline hints
+  (lsp-rust-analyzer-binding-mode-hints t) ; showing type hint next to variable
+  (lsp-rust-analyzer-server-display-inlay-hints t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+  (lsp-rust-analyzer-display-chaining-hints t)
+   (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+  (lsp-rust-analyzer-display-closure-return-type-hints t)
+  (lsp-rust-analyzer-display-parameter-hints nil)
+  (lsp-rust-analyzer-display-reborrow-hints nil)
 )
 #+end_src
 ** Terraform
@@ -1371,6 +1391,16 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 (use-package yaml-mode
   :mode "\\.ya?ml\\'")
 #+end_src
+** JSON
+#+begin_src emacs-lisp
+(use-package json-mode)
+#+end_src
+** Graphql
+#+begin_src emacs-lisp
+(use-package graphql-mode
+:hook (graphql-mode . lsp-deferred)
+)
+#+end_src
 ** Solidity
 =brew install solc=
 =npm install -g solc=
@@ -1397,6 +1427,18 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 			company-backends)))
 ))
 #+end_src
+** Haskell
+#+begin_src emacs-lisp
+(use-package lsp-haskell)
+(use-package haskell-mode
+;; :hook (haskell-mode . lsp-deferred)
+)
+#+end_src
+** Groovy + Jenkins
+#+begin_src emacs-lisp
+(use-package groovy-mode)
+(use-package jenkinsfile-mode)
+#+end_src
 * Chill
 ** Elfeed
 #+begin_src emacs-lisp
@@ -1420,7 +1462,7 @@ useful default keybindings:
 (defun dot/term-here ()
     "Go To Emacs Config File"
     (interactive)
-    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" default-directory)
+    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" (expand-file-name default-directory))
 )
 
 (defun dot/term-proj-root ()
@@ -1567,6 +1609,7 @@ folder, otherwise delete a character backward"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
     "r" '(consult-ripgrep :which-key "ripgrep")
+    "R" '(rg :which-key "rg")
     "s" 'query-replace
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
