@@ -701,14 +701,18 @@
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
-  (lsp-enable-which-key-integration t)
+  (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-eldoc-render-all t)
+  (setq lsp-eldoc-enable-hover nil)
   ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
   ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
+  ;; :custom
+  ;; (lsp-eldoc-render-all t)
 )
 
 (use-package flycheck
@@ -1060,9 +1064,19 @@
 :hook (rust-mode . lsp-deferred)
 :config
 (setq rust-format-on-save t)
+(setq lsp-lens-enable nil)
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
+  ;; inline hints
+  (lsp-rust-analyzer-binding-mode-hints t) ; showing type hint next to variable
+  (lsp-rust-analyzer-server-display-inlay-hints t)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
+  (lsp-rust-analyzer-display-chaining-hints t)
+   (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+  (lsp-rust-analyzer-display-closure-return-type-hints t)
+  (lsp-rust-analyzer-display-parameter-hints nil)
+  (lsp-rust-analyzer-display-reborrow-hints nil)
 )
 
 (use-package terraform-mode :mode "\\.tf\\'")
