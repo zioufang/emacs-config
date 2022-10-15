@@ -329,9 +329,9 @@
           (when-let (project (project-current))
             (car (project-roots project)))))
   (setq consult-preview-key (kbd "M-p"))
-  (setq consult-project-buffer-sources
-      (list
-       `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
+  ;; (setq consult-project-buffer-sources
+  ;;     (list
+  ;;      `(:hidden nil :narrow ?f ,@consult-source-project-recent-file-incl-buffer)))
   :custom
   (consult-find-command "fd --color=never ARG OPTS")
   ;; filtering out system buffer with leading *, temp buffer with leading space and magit buffer
@@ -1175,7 +1175,7 @@
 (defun dot/term-here ()
     "Go To Emacs Config File"
     (interactive)
-    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" default-directory)
+    (start-process "terminal" nil "open" "-n" "-a" "Alacritty.app" "--args" "--working-directory" (expand-file-name default-directory))
 )
 
 (defun dot/term-proj-root ()
