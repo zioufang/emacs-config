@@ -1113,6 +1113,12 @@
 (use-package yaml-mode
   :mode "\\.ya?ml\\'")
 
+(use-package json-mode)
+
+(use-package graphql-mode
+:hook (graphql-mode . lsp-deferred)
+)
+
 (use-package solidity-mode
 :config
 (setq solidity-comment-style 'slash)
@@ -1134,6 +1140,14 @@
 		(append '((company-solidity company-capf company-dabbrev-code))
 			company-backends)))
 ))
+
+(use-package lsp-haskell)
+(use-package haskell-mode
+;; :hook (haskell-mode . lsp-deferred)
+)
+
+(use-package groovy-mode)
+(use-package jenkinsfile-mode)
 
 ;; (use-package elfeed
 ;; :config
