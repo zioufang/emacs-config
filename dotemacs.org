@@ -200,6 +200,12 @@ install font =Cantarell=
 (recentf-mode 1)
 (setq recentf-max-menu-items 200)
 (setq recentf-max-saved-items 200)
+;; excluding from recentf
+;; run `recentf-cleanup` to take effect
+;; ~/.cargo/
+;; ~/.rustup/
+;; any .el file
+(setq recentf-exclude '("\\.cargo" "\\.rustup" "\\.el"))
 
 ;; auto remove trailing whitespace
 (setq show-trailing-whitespace t)
