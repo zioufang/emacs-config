@@ -157,6 +157,12 @@
 (recentf-mode 1)
 (setq recentf-max-menu-items 200)
 (setq recentf-max-saved-items 200)
+;; excluding from recentf
+;; run `recentf-cleanup` to take effect
+;; ~/.cargo/
+;; ~/.rustup/
+;; any .el file
+(setq recentf-exclude '("\\.cargo" "\\.rustup" "\\.el"))
 
 ;; auto remove trailing whitespace
 (setq show-trailing-whitespace t)
@@ -703,14 +709,18 @@
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
-  (lsp-enable-which-key-integration t)
+  (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-eldoc-render-all t)
+  (setq lsp-eldoc-enable-hover nil)
   ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
   ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
   (setq lsp-file-watch-ignored-directories
         (append '("[/\\\\]\\.venv\\'") lsp-file-watch-ignored-directories))
+  ;; :custom
+  ;; (lsp-eldoc-render-all t)
 )
 
 (use-package flycheck
@@ -943,6 +953,14 @@
 
 (use-package rg)
 
+(use-package popper
+:init
+(setq popper-reference-buffers '(rg-mode))
+;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Display-Action-Functions.html
+(setq popper-display-function #'display-buffer-pop-up-window)
+(popper-mode +1)
+)
+
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell
 ;; :after vterm
@@ -1066,12 +1084,14 @@
 :custom
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-diagnostics-disabled ["unresolved-proc-macro"])
+  (lsp-rust-analyzer-reload-workspace t)
+
   ;; inline hints
   (lsp-rust-analyzer-binding-mode-hints t) ; showing type hint next to variable
   (lsp-rust-analyzer-server-display-inlay-hints t)
   (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
   (lsp-rust-analyzer-display-chaining-hints t)
-   (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
+  (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
   (lsp-rust-analyzer-display-closure-return-type-hints t)
   (lsp-rust-analyzer-display-parameter-hints nil)
   (lsp-rust-analyzer-display-reborrow-hints nil)
@@ -1316,8 +1336,8 @@ folder, otherwise delete a character backward"
     :prefix "SPC"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
-    "r" '(consult-ripgrep :which-key "ripgrep")
-    "R" '(rg :which-key "rg")
+    "R" '(consult-ripgrep :which-key "ripgrep")
+    "r" '(rg :which-key "rg")
     "s" 'query-replace
     "p" '(dot/switch-project :which-key "switch project")
     "b" '(consult-buffer :which-key "switch buffer")
@@ -1325,6 +1345,7 @@ folder, otherwise delete a character backward"
     "k" '(previous-buffer :which-key "previous buffer")
     "q" '(kill-current-buffer :which-key "kill current buffer")
     "Q" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
+    "h" 'popper-toggle-latest
     ;; magit
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
@@ -1334,11 +1355,12 @@ folder, otherwise delete a character backward"
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
     "f" '(:ignore f :which-key "file commands")
-    "fp" '(dot/find-in-projects :which-key "fd files ~/projects")
+    "fa" '(dot/find-in-projects :which-key "fd all files in ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
-    "fr" '(consult-recent-file :which-key "find recent files")
+    ; "fr" '(consult-recent-file :which-key "find recent files") ;; use consult-buffer instead
+    "fd" '(consult-buffer :which-key "find recent files")
     "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
-    "fd" '(affe-find :which-key "find project files")
+    "fp" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
     ;; bookmarks
     "m" '(:ignore m :which-key "bookmark commands")
@@ -1357,8 +1379,8 @@ folder, otherwise delete a character backward"
     "oa"  '(org-agenda :which-key "agenda")
     "oc"  '(org-capture t :which-key "capture")
     ;; hydra
-    "h" '(:ignore h :which-key "hydra commands")
-    "hf" '(hydra-text-scale/body :which-key "scale font size")
+    "a" '(:ignore h :which-key "hydra commands")
+    "af" '(hydra-text-scale/body :which-key "scale font size")
     )
   ;; non leader key overrides
   (general-define-key
@@ -1418,3 +1440,9 @@ folder, otherwise delete a character backward"
     "M-TAB" #'yas-expand
     "SPC" yas-maybe-expand
   )
+
+(general-define-key
+  :states '(normal)
+  :keymaps 'rg-mode-map
+  "C-p" '(lambda () (interactive) (popper-mode -1) (rg-back-history) (popper-mode +1))
+  "C-n" '(lambda () (interactive) (popper-mode -1) (rg-forward-history) (popper-mode +1)))
