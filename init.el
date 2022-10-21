@@ -65,7 +65,7 @@
 ;; Use straight.el for use-package expressions
 (straight-use-package 'use-package)
 
-(defvar dot-font-size 140)
+(defvar dot-font-size 120)
 (defvar dot-mono-font"JetBrainsMono Nerd Font")
 (defvar dot-variable-font "Avenir Next")
 (set-face-attribute 'default nil :font dot-mono-font :height dot-font-size)
@@ -611,6 +611,7 @@
   :init
   (setq evil-want-C-u-scroll t)
   (setq evil-want-keybinding nil)  ;; for evil-collection
+  (setq evil-want-Y-yank-to-eol t)  ;; for evil-collection
   :config
   (evil-mode 1)
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
@@ -712,8 +713,9 @@
   (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-eldoc-render-all t)
-  (setq lsp-eldoc-enable-hover nil)
+  (setq lsp-eldoc-render-all nil
+        lsp-eldoc-enable-hover t
+        eldoc-idle-delay 0.1) ;; bottom left defintion
   ;; (setq lsp-signature-auto-activate nil) ;; you could manually request them via `lsp-signature-activate`
   ;; (setq lsp-signature-render-documentation nil)
   ;; ignore files for file watcher
@@ -734,7 +736,7 @@
       lsp-ui-sideline-show-code-actions nil
       lsp-ui-doc-enable nil
       lsp-ui-doc-max-height 50
-      eldoc-idle-delay 0 ;; bottom left defintion
+      lsp-ui-sideline-diagnostic-max-lines 3
 ))
 
 (use-package lsp-treemacs
@@ -955,7 +957,8 @@
 
 (use-package popper
 :init
-(setq popper-reference-buffers '(rg-mode))
+;; grep-mode from consult-grep via embark
+(setq popper-reference-buffers '(rg-mode grep-mode))
 ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Display-Action-Functions.html
 (setq popper-display-function #'display-buffer-pop-up-window)
 (popper-mode +1)
@@ -1087,8 +1090,8 @@
   (lsp-rust-analyzer-reload-workspace t)
 
   ;; inline hints
-  (lsp-rust-analyzer-binding-mode-hints t) ; showing type hint next to variable
-  (lsp-rust-analyzer-server-display-inlay-hints t)
+  (lsp-rust-analyzer-server-display-inlay-hints nil)
+  (lsp-rust-analyzer-binding-mode-hints nil) ; showing type hint next to variable
   (lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial")
   (lsp-rust-analyzer-display-chaining-hints t)
   (lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil)
@@ -1096,6 +1099,11 @@
   (lsp-rust-analyzer-display-parameter-hints nil)
   (lsp-rust-analyzer-display-reborrow-hints nil)
 )
+
+;; disable inlay hints by default
+(add-hook 'lsp-after-open-hook (lambda ()
+                                 (when (lsp-find-workspace 'rust-analyzer nil)
+                                   (lsp-rust-analyzer-inlay-hints-mode -1))))
 
 (use-package terraform-mode :mode "\\.tf\\'")
 
@@ -1181,14 +1189,14 @@
 (use-package groovy-mode)
 (use-package jenkinsfile-mode)
 
-;; (use-package elfeed
-;; :config
-;; (setf url-queue-timeout 15)
-;; (setq elfeed-feeds
-;;   '(
-;;   "https://hnrss.org/frontpage"
-;;   )
-;; ))
+(use-package elfeed
+:config
+(setf url-queue-timeout 15)
+(setq elfeed-feeds
+  '(
+  "https://blog.yoshuawuyts.com/rss.xml"
+  )
+))
 
 ;; mac only
 ;; open -n -a 'Alacritty.app' --args --working-directory
@@ -1317,6 +1325,15 @@ folder, otherwise delete a character backward"
   (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
   (affe-find (concat "~/projects/" project-dir))))
 
+(defun dot/dired-project ()
+  (interactive)
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (dired (concat "~/projects/" project-dir))))
+
+(defun dot/revert-buffer-no-confirm ()
+  "Revert buffer without confirmation."
+  (interactive) (revert-buffer t t))
+
 (use-package hydra
  :defer t)
 
@@ -1336,16 +1353,16 @@ folder, otherwise delete a character backward"
     :prefix "SPC"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
+    "T" '(dot/term-proj-root :which-key "open term app with current path")
     "R" '(consult-ripgrep :which-key "ripgrep")
     "r" '(rg :which-key "rg")
     "s" 'query-replace
-    "p" '(dot/switch-project :which-key "switch project")
-    "b" '(consult-buffer :which-key "switch buffer")
-    "j" '(next-buffer :which-key "next buffer")
-    "k" '(previous-buffer :which-key "previous buffer")
+    "p" '(dot/dired-project :which-key "dired switch project")
+    "P" '(dot/switch-project :which-key "switch project")
     "q" '(kill-current-buffer :which-key "kill current buffer")
     "Q" '(dot/kill-other-prog-buffers :which-key "kill buffers except current")
     "h" 'popper-toggle-latest
+    "j" '(lsp-ui-doc-glance :which-key "lsp-ui-doc-glance")
     ;; magit
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
@@ -1358,7 +1375,8 @@ folder, otherwise delete a character backward"
     "fa" '(dot/find-in-projects :which-key "fd all files in ~/projects")
     "fe" '((lambda () (interactive) (find-file "~/projects/emacs-config/dotemacs.org")) :which-key "go to emacs config file")
     ; "fr" '(consult-recent-file :which-key "find recent files") ;; use consult-buffer instead
-    "fd" '(consult-buffer :which-key "find recent files")
+    "fd" '(consult-buffer :which-key "find buffer + recent files")
+    "fr" '(consult-recent-file :which-key "find recent files")
     "ff" '(consult-project-buffer :which-key "find project buffers and recent files")
     "fp" '(affe-find :which-key "find project files")
     "fo" '((lambda () (interactive) (affe-find "~/Dropbox/org")) :which-key "find org file")
@@ -1400,6 +1418,7 @@ folder, otherwise delete a character backward"
   (general-define-key
     :states '(normal insert visual emacs)
     "<f12>"   'dot/toggle-maximize-buffer
+    "<f5>" 'dot/revert-buffer-no-confirm
     "M-z" 'toggle-evilmode
     "C-/"   'consult-line
     "C-M-/" 'consult-outline
@@ -1417,7 +1436,16 @@ folder, otherwise delete a character backward"
     "gw" 'avy-goto-word-1
     "\\" '(lambda () (interactive) (evil-window-vsplit) (evil-window-right 1))
     "-" 'dired-jump
-    "_" 'dot/split-dired-jump)
+    "_" 'dot/split-dired-jump
+)
+;; language specific
+(general-define-key
+  :states '(normal)
+  :keymaps 'rust-mode-map
+  :prefix "SPC"
+  "k" '(:ignore l :which-key "language specifc commands")
+  "kh" 'lsp-rust-analyzer-inlay-hints-mode
+  "kd" 'lsp-rust-analyzer-open-external-docs
 )
 
   ;; org-mod
@@ -1446,3 +1474,5 @@ folder, otherwise delete a character backward"
   :keymaps 'rg-mode-map
   "C-p" '(lambda () (interactive) (popper-mode -1) (rg-back-history) (popper-mode +1))
   "C-n" '(lambda () (interactive) (popper-mode -1) (rg-forward-history) (popper-mode +1)))
+
+)
