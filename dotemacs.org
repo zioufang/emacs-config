@@ -1608,14 +1608,20 @@ folder, otherwise delete a character backward"
   (evil-normal-state)
 )
 
+;; fd dir path that ends with .git at max depth of 3 (one sub directory depth, increase if more nested)
+;; -> /users/some.user/projects/reponame/.git
+;; get the dirname (remove .git/ in the end) and echo it out for sed
+;; -> /users/some.user/projects/reponame
+;; sed remove anything start with / and up to /projects/
+;; -> reponame
 (defun dot/switch-project ()
   (interactive)
-  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "fd --type d --hidden --max-depth 3 --color never .git$ ~/projects | xargs dirname | xargs -I {} echo {} | sed 's#^/.*/projects/##'")))))
   (affe-find (concat "~/projects/" project-dir))))
 
 (defun dot/dired-project ()
   (interactive)
-  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "fd --type d --hidden --max-depth 3 --color never .git$ ~/projects | xargs dirname | xargs -I {} echo {} | sed 's#^/.*/projects/##'")))))
   (dired (concat "~/projects/" project-dir))))
 
 (defun dot/revert-buffer-no-confirm ()
