@@ -4,7 +4,8 @@
 (add-hook 'emacs-startup-hook
   (lambda ()
     (setq gc-cons-threshold (* 2 1000 1000)
-          gc-cons-percentage 0.1)))
+          gc-cons-percentage 0.1)
+))
 
 ;; measure startup time
 (add-hook 'emacs-startup-hook
@@ -607,6 +608,14 @@
       (org-babel-tangle))))
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot/org-babel-tangle-config)))
 
+(use-package desktop
+:config
+(desktop-save-mode -1)
+(setq desktop-path '("~/.config/emacs"))
+(setq desktop-dirname "~/.config/emacs")
+(setq desktop-base-file-name "emacs-desktop")
+)
+
 (use-package evil
   :init
   (setq evil-want-C-u-scroll t)
@@ -614,6 +623,7 @@
   (setq evil-want-Y-yank-to-eol t)  ;; for evil-collection
   :config
   (evil-mode 1)
+  (add-to-list 'desktop-locals-to-save 'evil-markers-alist) ;; persist evil markers
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-global-set-key 'motion "gj" 'evil-next-line)
@@ -705,14 +715,21 @@
 
 (setq tramp-default-method "ssh")
 
+;; enable plists for json parsing in lsp
+;; set this env in both runtime and compile time
+;; i.e. NEED to run something like LSP_USE_PLISTS=1 emacs
+; (setenv "LSP_USE_PLISTS" "1")
+
 (use-package lsp-mode
   :demand t
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
+  ; (setq lsp-use-plists t)
   (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-enable-snippet nil) ;; disable snippet from auto completion (company)
   (setq lsp-eldoc-render-all nil
         lsp-eldoc-enable-hover t
         eldoc-idle-delay 0.1) ;; bottom left defintion
@@ -958,7 +975,8 @@
 (use-package popper
 :init
 ;; grep-mode from consult-grep via embark
-(setq popper-reference-buffers '(rg-mode grep-mode))
+;; xref--xref-buffer-mode from lsp-find-reference
+(setq popper-reference-buffers '(rg-mode grep-mode xref--xref-buffer-mode))
 ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Display-Action-Functions.html
 (setq popper-display-function #'display-buffer-pop-up-window)
 (popper-mode +1)
@@ -1189,6 +1207,10 @@
 (use-package groovy-mode)
 (use-package jenkinsfile-mode)
 
+(use-package elm-mode
+:hook (elm-mode . lsp-deferred)
+)
+
 (use-package elfeed
 :config
 (setf url-queue-timeout 15)
@@ -1320,14 +1342,20 @@ folder, otherwise delete a character backward"
   (evil-normal-state)
 )
 
+;; fd dir path that ends with .git at max depth of 3 (one sub directory depth, increase if more nested)
+;; -> /users/some.user/projects/reponame/.git
+;; get the dirname (remove .git/ in the end) and echo it out for sed
+;; -> /users/some.user/projects/reponame
+;; sed remove anything start with / and up to /projects/
+;; -> reponame
 (defun dot/switch-project ()
   (interactive)
-  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "fd --type d --hidden --max-depth 3 --color never .git$ ~/projects | xargs dirname | xargs -I {} echo {} | sed 's#^/.*/projects/##'")))))
   (affe-find (concat "~/projects/" project-dir))))
 
 (defun dot/dired-project ()
   (interactive)
-  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "ls ~/projects/")))))
+  (let ((project-dir (completing-read "Switch to project: " (split-string (shell-command-to-string "fd --type d --hidden --max-depth 3 --color never .git$ ~/projects | xargs dirname | xargs -I {} echo {} | sed 's#^/.*/projects/##'")))))
   (dired (concat "~/projects/" project-dir))))
 
 (defun dot/revert-buffer-no-confirm ()
@@ -1411,8 +1439,8 @@ folder, otherwise delete a character backward"
     "C-<tab>" 'dot/hs-cycle
     "C-S-<tab>" 'dot/hs-global-cycle
     "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
-    "C-8" 'back-to-indentation
-    "C-9" 'end-of-line
+    "H" 'back-to-indentation
+    "L" 'end-of-line
   )
   ;; non-override global mapping for normal + insert state
   (general-define-key

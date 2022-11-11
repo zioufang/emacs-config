@@ -28,7 +28,8 @@ debug errored out config:
 (add-hook 'emacs-startup-hook
   (lambda ()
     (setq gc-cons-threshold (* 2 1000 1000)
-          gc-cons-percentage 0.1)))
+          gc-cons-percentage 0.1)
+))
 
 ;; measure startup time
 (add-hook 'emacs-startup-hook
@@ -877,6 +878,7 @@ prefix key: =C-c l=
   (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-enable-snippet nil) ;; disable snippet from auto completion (company)
   (setq lsp-eldoc-render-all nil
         lsp-eldoc-enable-hover t
         eldoc-idle-delay 0.1) ;; bottom left defintion
@@ -1180,7 +1182,8 @@ From https://karthinks.com/software/simple-folding-with-hideshow/
 (use-package popper
 :init
 ;; grep-mode from consult-grep via embark
-(setq popper-reference-buffers '(rg-mode grep-mode))
+;; xref--xref-buffer-mode from lsp-find-reference
+(setq popper-reference-buffers '(rg-mode grep-mode xref--xref-buffer-mode))
 ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Buffer-Display-Action-Functions.html
 (setq popper-display-function #'display-buffer-pop-up-window)
 (popper-mode +1)
@@ -1467,6 +1470,16 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 (use-package groovy-mode)
 (use-package jenkinsfile-mode)
 #+end_src
+** Elm
+node 18 don't seem to work, downgrade to node 16:
+https://github.com/elm-tooling/elm-language-server/issues/692
+might need to specify the elm workspace folder to be at the elm project root with =elm-stuff=
+https://github.com/elm-tooling/elm-language-server/issues/305
+#+begin_src emacs-lisp
+(use-package elm-mode
+:hook (elm-mode . lsp-deferred)
+)
+#+end_src
 * Chill
 ** Elfeed
 #+begin_src emacs-lisp
@@ -1709,8 +1722,8 @@ folder, otherwise delete a character backward"
     "C-<tab>" 'dot/hs-cycle
     "C-S-<tab>" 'dot/hs-global-cycle
     "ZZ" (lambda () (interactive) (delete-window) (balance-windows))
-    "C-8" 'back-to-indentation
-    "C-9" 'end-of-line
+    "H" 'back-to-indentation
+    "L" 'end-of-line
   )
   ;; non-override global mapping for normal + insert state
   (general-define-key
