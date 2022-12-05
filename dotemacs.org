@@ -892,7 +892,7 @@ prefix key: =C-c l=
 )
 
 (use-package flycheck
-  :hook ((lsp-mode yaml-mode) . global-flycheck-mode))
+  :hook ((lsp-mode) . global-flycheck-mode))
 #+end_src
 *** lsp-ui
 #+begin_src emacs-lisp
@@ -1085,6 +1085,7 @@ maybe =brew install libvterm=
 (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
 (yas-reload-all)
 (add-hook 'prog-mode-hook #'yas-minor-mode)
+(add-hook 'conf-toml-mode-hook #'yas-minor-mode)
 )
 #+end_src
 ** Avy

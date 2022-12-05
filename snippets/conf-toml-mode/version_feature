@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: dependency version and feature
+# key: ;vf
+# --
+${1:crate} = { version = "${2:version}", features = [${3:features}] }
