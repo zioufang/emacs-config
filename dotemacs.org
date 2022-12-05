@@ -1109,7 +1109,7 @@ formatting codes, dependencies:
         '("goimports"))
   ;; python
   (setf (alist-get 'black apheleia-formatters)
-        '("black" "-l" "119" "-"))
+        '("black" "-l" "88" "-"))
   (setf (alist-get 'isort apheleia-formatters)
         '("isort" "--stdout" "-"))
   (setf (alist-get 'python-mode apheleia-mode-alist)
@@ -1176,7 +1176,10 @@ From https://karthinks.com/software/simple-folding-with-hideshow/
 #+end_src
 ** rg
 #+begin_src emacs-lisp
-(use-package rg)
+(use-package rg
+;; WORKAROUND rg-excutable was somehow set to nil
+:init (setq rg-executable "/opt/homebrew/bin/rg")
+)
 #+end_src
 ** popper
 #+begin_src emacs-lisp
@@ -1192,6 +1195,28 @@ From https://karthinks.com/software/simple-folding-with-hideshow/
 #+end_src
 
 #+RESULTS:
+** sql
+#+begin_src emacs-lisp
+;; Remove all default login parameters
+(setq sql-postgres-login-params nil)
+
+(defun dot/my-pass (key)
+  (string-trim-right
+   (shell-command-to-string (concat "pass " key))))
+
+(setq sql-connection-alist
+      '(
+        (sitl-prod (sql-product 'postgres)
+            (sql-database (concat "postgresql://pgadmin:"
+                                  (dot/my-pass "db/sitl-prod")
+                                  "@sitl-workflows-prod.cq6imc38uzle.us-west-2.rds.amazonaws.com:9999/sitl_workflows")))
+        (sitl-staging (sql-product 'postgres)
+            (sql-database (concat "postgresql://pgadmin:"
+                                  (dot/my-pass "db/sitl-staging")
+                                  "@sitl-workflows-staging.cq6imc38uzle.us-west-2.rds.amazonaws.com:9999/sitl_workflows")))
+       ))
+;; define your connections
+#+end_src
 ** Misc
 #+begin_src emacs-lisp
 ;; Make sure emacs use the proper ENV VAR
@@ -1421,7 +1446,9 @@ https://github.com/fletcher/MultiMarkdown-6/releases
 ** YAML
 #+begin_src emacs-lisp
 (use-package yaml-mode
-  :mode "\\.ya?ml\\'")
+  :mode "\\.ya?ml\\'"
+:hook (yaml-mode . lsp-deferred)
+)
 #+end_src
 ** JSON
 #+begin_src emacs-lisp
@@ -1665,7 +1692,7 @@ folder, otherwise delete a character backward"
     :prefix "SPC"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
-    "T" '(dot/term-proj-root :which-key "open term app with current path")
+    "T" '(dot/term-here :which-key "open term app with current path")
     "R" '(consult-ripgrep :which-key "ripgrep")
     "r" '(rg :which-key "rg")
     "s" 'query-replace
@@ -1679,7 +1706,7 @@ folder, otherwise delete a character backward"
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
     "gc"  '(magit-branch-checkout :which-key "checkout a branch")
-    "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
+    "gg"  '(git-link :which-key "open git link in browser")
     "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
@@ -1696,7 +1723,8 @@ folder, otherwise delete a character backward"
     "m" '(:ignore m :which-key "bookmark commands")
     "mm" '(consult-bookmark :which-key "bookmark consult")
     "ms" '(bookmark-set :which-key "bookmark set")
-    "md" '(bookmark-delete :which-key "bookmark delete")
+    "ml" '(list-bookmark :which-key "list bookmark")
+    "md" '(make-directory :which-key "make directory")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
@@ -1708,9 +1736,9 @@ folder, otherwise delete a character backward"
     "o" '(:ignore o :which-key "org commands")
     "oa"  '(org-agenda :which-key "agenda")
     "oc"  '(org-capture t :which-key "capture")
-    ;; hydra
-    "a" '(:ignore h :which-key "hydra commands")
-    "af" '(hydra-text-scale/body :which-key "scale font size")
+    ;; ;; hydra
+    ;; "a" '(:ignore h :which-key "hydra commands")
+    ;; "af" '(hydra-text-scale/body :which-key "scale font size")
     )
   ;; non leader key overrides
   (general-define-key

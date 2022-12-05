@@ -608,14 +608,6 @@
       (org-babel-tangle))))
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'dot/org-babel-tangle-config)))
 
-(use-package desktop
-:config
-(desktop-save-mode -1)
-(setq desktop-path '("~/.config/emacs"))
-(setq desktop-dirname "~/.config/emacs")
-(setq desktop-base-file-name "emacs-desktop")
-)
-
 (use-package evil
   :init
   (setq evil-want-C-u-scroll t)
@@ -623,7 +615,6 @@
   (setq evil-want-Y-yank-to-eol t)  ;; for evil-collection
   :config
   (evil-mode 1)
-  (add-to-list 'desktop-locals-to-save 'evil-markers-alist) ;; persist evil markers
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
   (evil-global-set-key 'motion "gj" 'evil-next-line)
@@ -715,17 +706,11 @@
 
 (setq tramp-default-method "ssh")
 
-;; enable plists for json parsing in lsp
-;; set this env in both runtime and compile time
-;; i.e. NEED to run something like LSP_USE_PLISTS=1 emacs
-; (setenv "LSP_USE_PLISTS" "1")
-
 (use-package lsp-mode
   :demand t
   :commands (lsp lsp-deferred)
   :bind-keymap ("C-c l" . lsp-command-map)
   :config
-  ; (setq lsp-use-plists t)
   (setq lsp-enable-which-key-integration t)
   (setq lsp-signature-function 'lsp-signature-posframe)
   (setq lsp-headerline-breadcrumb-enable nil)
@@ -743,7 +728,7 @@
 )
 
 (use-package flycheck
-  :hook ((lsp-mode yaml-mode) . global-flycheck-mode))
+  :hook ((lsp-mode) . global-flycheck-mode))
 
 (use-package lsp-ui
 :after lsp-mode
@@ -895,6 +880,7 @@
 (setq yas-snippet-dirs '("~/projects/emacs-config/snippets"))
 (yas-reload-all)
 (add-hook 'prog-mode-hook #'yas-minor-mode)
+(add-hook 'conf-toml-mode-hook #'yas-minor-mode)
 )
 
 (use-package avy
@@ -909,7 +895,7 @@
         '("goimports"))
   ;; python
   (setf (alist-get 'black apheleia-formatters)
-        '("black" "-l" "119" "-"))
+        '("black" "-l" "88" "-"))
   (setf (alist-get 'isort apheleia-formatters)
         '("isort" "--stdout" "-"))
   (setf (alist-get 'python-mode apheleia-mode-alist)
@@ -970,7 +956,10 @@
        (setq this-command 'dot/hs-global-show))
       (_ (hs-hide-all))))
 
-(use-package rg)
+(use-package rg
+;; WORKAROUND rg-excutable was somehow set to nil
+:init (setq rg-executable "/opt/homebrew/bin/rg")
+)
 
 (use-package popper
 :init
@@ -981,6 +970,26 @@
 (setq popper-display-function #'display-buffer-pop-up-window)
 (popper-mode +1)
 )
+
+;; Remove all default login parameters
+(setq sql-postgres-login-params nil)
+
+(defun dot/my-pass (key)
+  (string-trim-right
+   (shell-command-to-string (concat "pass " key))))
+
+(setq sql-connection-alist
+      '(
+        (sitl-prod (sql-product 'postgres)
+            (sql-database (concat "postgresql://pgadmin:"
+                                  (dot/my-pass "db/sitl-prod")
+                                  "@sitl-workflows-prod.cq6imc38uzle.us-west-2.rds.amazonaws.com:9999/sitl_workflows")))
+        (sitl-staging (sql-product 'postgres)
+            (sql-database (concat "postgresql://pgadmin:"
+                                  (dot/my-pass "db/sitl-staging")
+                                  "@sitl-workflows-staging.cq6imc38uzle.us-west-2.rds.amazonaws.com:9999/sitl_workflows")))
+       ))
+;; define your connections
 
 ;; Make sure emacs use the proper ENV VAR
 (use-package exec-path-from-shell
@@ -1169,7 +1178,9 @@
   (setq-default web-mode-attribute-indent-offset 2))
 
 (use-package yaml-mode
-  :mode "\\.ya?ml\\'")
+  :mode "\\.ya?ml\\'"
+:hook (yaml-mode . lsp-deferred)
+)
 
 (use-package json-mode)
 
@@ -1381,7 +1392,7 @@ folder, otherwise delete a character backward"
     :prefix "SPC"
     :non-normal-prefix "C-SPC"
     "t" '(vterm-toggle :which-key "toggle vterm")
-    "T" '(dot/term-proj-root :which-key "open term app with current path")
+    "T" '(dot/term-here :which-key "open term app with current path")
     "R" '(consult-ripgrep :which-key "ripgrep")
     "r" '(rg :which-key "rg")
     "s" 'query-replace
@@ -1395,7 +1406,7 @@ folder, otherwise delete a character backward"
     "SPC" '(magit-status :which-key "magit status")
     "g"   '(:ignore g :which-key "magit commands")
     "gc"  '(magit-branch-checkout :which-key "checkout a branch")
-    "gd"  '(magit-diff-unstaged :which-key "diff unstaged")
+    "gg"  '(git-link :which-key "open git link in browser")
     "gl"  '(magit-log-buffer-file :which-key "git log current buffer")
     "gm"  '(vc-refresh-state :which-key "update modeline vc state")
     ;; find file ops
@@ -1412,7 +1423,8 @@ folder, otherwise delete a character backward"
     "m" '(:ignore m :which-key "bookmark commands")
     "mm" '(consult-bookmark :which-key "bookmark consult")
     "ms" '(bookmark-set :which-key "bookmark set")
-    "md" '(bookmark-delete :which-key "bookmark delete")
+    "ml" '(list-bookmark :which-key "list bookmark")
+    "md" '(make-directory :which-key "make directory")
     ;; lsp, linting etc.
     "l" '(:ignore l :which-key "lsp commands")
     "lr" '(lsp-workspace-restart :which-key "lsp-restart-workspace")
@@ -1424,9 +1436,9 @@ folder, otherwise delete a character backward"
     "o" '(:ignore o :which-key "org commands")
     "oa"  '(org-agenda :which-key "agenda")
     "oc"  '(org-capture t :which-key "capture")
-    ;; hydra
-    "a" '(:ignore h :which-key "hydra commands")
-    "af" '(hydra-text-scale/body :which-key "scale font size")
+    ;; ;; hydra
+    ;; "a" '(:ignore h :which-key "hydra commands")
+    ;; "af" '(hydra-text-scale/body :which-key "scale font size")
     )
   ;; non leader key overrides
   (general-define-key
